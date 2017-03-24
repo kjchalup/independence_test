@@ -22,16 +22,16 @@ implements the Learning Conditional Independence Test (LCIT), described in
     pval = indep_nn(x, y, z, max_time=30, discrete=(True, False))
 
 Here, we created discrete variables *x* and *y*, d-separated by a "common cause"
-*z*. The null hypothesis is that *x* is independent of *y* given *z*. Since in this
- case the variables are independent given *z*, pval should be small. Specifying which
- variables are discrete is optional.
+*z*. The null hypothesis is that *x* is independent of *y* given *z*. Since in this 
+case the variables are independent given *z*, pval should be small. Specifying which 
+variables are discrete is optional.
 
 There are many more examples in `example_[abc].py` scripts.
 
 Installation
 ------------
 Simply clone this repository -- all the important code is in the
-`./independence_nn.py`_ and `nn.py`_ files, so put the repository
+`independence_nn.py`_, `nn.py`_ and `utils.py`_ files, so put the repository
 in your path and import indep_nn from independence_nn.
   
 Requirements (all installable through `pip`_):
@@ -40,3 +40,6 @@ Requirements (all installable through `pip`_):
     * tensorflow >= 1.0.0
 
 .. _pip: http://www.pip-installer.org/en/latest/
+.. _independence_nn.py: independence_nn.py
+.. _utils.py: utils.py
+.. _nn.py: nn.py
