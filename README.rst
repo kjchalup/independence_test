@@ -31,7 +31,7 @@ There are many more examples in `example_[abc].py` scripts.
 Installation
 ------------
 Simply clone this repository -- all the important code is in the
-`./independence_nn.py`_ and `nn.py`_ files, so put the repository
+`independence_nn.py`_, `nn.py`_ and `utils.py`_ files, so put the repository
 in your path and import indep_nn from independence_nn.
   
 Requirements (all installable through `pip`_):
@@ -40,3 +40,6 @@ Requirements (all installable through `pip`_):
     * tensorflow >= 1.0.0
 
 .. _pip: http://www.pip-installer.org/en/latest/
+.. _independence_nn.py: independence_nn.py
+.. _utils.py: utils.py
+.. _nn.py: nn.py
