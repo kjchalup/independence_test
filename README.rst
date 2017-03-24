@@ -2,7 +2,7 @@
     :target: https://opensource.org/licenses/MIT
     :alt: License
 
-*A Deep-learning-based Conditional Independence Test*
+*A Deep-learning-based Conditional Independence Test.*
 
 Usage
 -----
@@ -12,15 +12,19 @@ implements the Learning Conditional Independence Test (LCIT), described in
 [link to arXiv]. Basic usage is simple:
 
 .. code:: python 
+
+    from independence_nn import indep_nn
+    n_samples = 300
     z = np.random.dirichlet(alpha=np.ones(2), size=n_samples)
     x = np.vstack([np.random.multinomial(20, p) for p in z])[:, :-1]
     y = np.vstack([np.random.multinomial(20, p) for p in z])[:, :-1]
     z = z[:, :-1]
     pval = indep_nn(x, y, z, max_time=30, discrete=(True, False))
 
-Here, we created discrete variables *x* and *y*, dependent through a "common cause"
+Here, we created discrete variables *x* and *y*, d-separated by a "common cause"
 *z*. The null hypothesis is that *x* is independent of *y* given *z*. Since in this
- case the variables are independent given *z*, pval should be small.
+ case the variables are independent given *z*, pval should be small. Specifying which
+ variables are discrete is optional.
 
 There are many more examples in `example_[abc].py` scripts.
 
