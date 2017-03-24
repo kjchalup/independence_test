@@ -1,3 +1,5 @@
+""" Run the independence test on climate data. Requires NOAA reanalysis II data
+(contact the author for .mat files). """
 import os
 import numpy as np
 import scipy.io as sio
@@ -9,7 +11,7 @@ def test_climate(data_dir='./climate', max_time=60, delay=2):
     temp = sio.loadmat(os.path.join(
         data_dir, 'sfc_temp.mat'))['DataSeries'][:, :10, :10]
     n_samples, nx, ny = wind_x.shape
-    
+
     x = wind_x[:-delay, :, :].reshape(-1, nx * ny)
     y = wind_x[delay:, :, :].reshape(-1, nx * ny)
     z = np.vstack([wind_x[start_id:start_id+delay-1, :, :].reshape(1, -1)

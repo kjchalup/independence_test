@@ -1,3 +1,4 @@
+""" Run the independence test on artificial data, used by other articles. """
 import os
 from collections import defaultdict
 import numpy as np

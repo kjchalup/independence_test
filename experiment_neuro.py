@@ -1,5 +1,8 @@
 """ Establish the causal network between seven visual brain regions
-resopnding to natural images, from Gallant's fMRI data. """
+resopnding to natural images, from Gallant's fMRI data. The data
+unfortunately is not publicly available, but can be downloaded directly
+from here https://crcns.org/data-sets/vc/vim-1 (you'll need 
+to sign up first)."""
 from collections import defaultdict
 import numpy as np
 from scipy.io import loadmat
