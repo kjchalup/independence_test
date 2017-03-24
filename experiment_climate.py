@@ -21,4 +21,3 @@ def test_climate(data_dir='./climate', max_time=60, delay=2):
 
 if __name__ == "__main__":
     test_climate(max_time=240, delay=10)
-

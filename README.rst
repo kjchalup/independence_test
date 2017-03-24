@@ -19,8 +19,8 @@ implements the Learning Conditional Independence Test (LCIT), described in
     pval = indep_nn(x, y, z, max_time=30, discrete=(True, False))
 
 Here, we created discrete variables *x* and *y*, dependent through a "common cause"
-*z*. The null hypothesis is that *x* is independent of *y* given *z*. Since in this
- case the variables are independent given *z*, pval should be small.
+*z*. The null hypothesis is that *x* is independent of *y* given *z*. Since in this 
+case the variables are independent given *z*, pval should be small.
 
 There are many more examples in `example_[abc].py` scripts.
 

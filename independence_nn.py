@@ -1,13 +1,7 @@
 """ NN-based routines for independence testing. """
-import itertools
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
-
-from scipy.stats import norm
-from scipy.spatial.distance import pdist
-from sklearn.mixture import GaussianMixture
 import nn
 from utils import equalize_dimensions
 

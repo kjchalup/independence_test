@@ -1,5 +1,4 @@
 """ Various utility functions. """
-
 import numpy as np
 import nn
 
