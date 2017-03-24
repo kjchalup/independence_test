@@ -118,21 +118,8 @@ class NN(object):
         """ Re-initialize the network. """
         self.sess.run(self.init_op)
 
-    def score(self, x, y):
-        """ Compute the mean squared error on the data.
-
-        Args:
-            x (n_samples, x_dim): Input data.
-
-        Returns:
-            score (n_samples,): MSE on the data.
-        """
-        x = self.scaler_x.transform(x)
-        y = self.scaler_y.transform(y)
-        return self.sess.run(self.loss_tf, {self.x_tf: x, self.y_tf: y})
-
     def predict(self, x):
-        """ Compute the Gaussian Mixture Model coefficients for given data.
+        """ Compute the output for given data.
 
         Args:
             x (n_samples, x_dim): Input data.
