@@ -30,14 +30,13 @@ There are many more examples in `example_[abc].py` scripts.
 
 Installation
 ------------
-Use Python 2.7 and an up-to-date `pip`_ for easy installation.
-The neural net code uses  `Tensorflow`_. If you can, use a
-machine with a GPU. Clone this repository, then install the package
-from within the repository directory::
+Simply clone this repository -- all the important code is in the
+`./independence_nn.py`_ and `nn.py`_ files, so put the repository
+in your path and import indep_nn from independence_nn.
   
-  $ pip install .
-
-This will install all the necessary dependencies.
+Requirements (all installable through `pip`_):
+    * numpy >= 1.12
+    * scikit-learn >= 0.18.1
+    * tensorflow >= 1.0.0
 
 .. _pip: http://www.pip-installer.org/en/latest/
-.. _TensorFlow: https://www.tensorflow.org/
