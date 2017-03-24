@@ -44,8 +44,10 @@ def bootstrap(h0, h1, B=10000):
         mu1s[b_id] = mu1
     return t_star, mu0s, mu1s
 
+
 def indep_nn(x, y, z=None, num_perm=10, prop_test=.1,
-             max_time=60*5, discrete=(False, False), plot=True, **kwargs):
+             max_time=60, discrete=(False, False),
+             plot_return=True, verbose=True, **kwargs):
     """ The neural net probabilistic independence test.
     See Chalupka, Perona, Eberhardt 2017.
 
@@ -58,17 +60,19 @@ def indep_nn(x, y, z=None, num_perm=10, prop_test=.1,
         prop_test (int): Proportion of data to evaluate test stat on.
         max_time (float): Time limit for the test (approximate).
         discrete (bool, bool): Whether x or y are discrete.
-        plot (bool): If True, plot the predictions and errors.
-        kwargs: Arguments to pass to the MDN constructor.
+        plot_return (bool): If True, return statistics useful for plotting.
+        verbose (bool): Print out progress messages (or not).
+        kwargs: Arguments to pass to the neural net constructor.
 
     Returns:
         p (float): The p-value for the null hypothesis
             that x is independent of y.
     """
+    kwargs['verbose'] = verbose
     # If x xor y is discrete, use the continuous variable as input.
     if discrete[0] and not discrete[1]:
         x, y = y, x
-        
+
     # Adjust the dimensionalities of x, y, z to be on the same
     # order, by simple data duplication.
     if z is not None:
@@ -85,7 +89,7 @@ def indep_nn(x, y, z=None, num_perm=10, prop_test=.1,
         x_z = np.hstack([x, z])
     else:
         x_z = x
-        
+
     # Create a neural net that predicts y from x and z.
     clf = nn.NN(x_dim=x_z[n_test:].shape[1],
                 y_dim=y[n_test:].shape[1], **kwargs)
@@ -102,8 +106,9 @@ def indep_nn(x, y, z=None, num_perm=10, prop_test=.1,
     kwargs['num_epochs'] = num_epochs
     stat = test_stat(y_pred, y[:n_test])
     d1_stats[0] = stat
-    print('D1 statistic, permutation {}: {}'.format(
-        0, d1_stats[0]))
+    if verbose:
+        print('D1 statistic, permutation {}: {}'.format(
+            0, d1_stats[0]))
 
     for perm_id in range(1, num_perm):
         clf.restart()
@@ -111,13 +116,13 @@ def indep_nn(x, y, z=None, num_perm=10, prop_test=.1,
         y_pred = clf.predict(x_z[:n_test])
         d1_preds.append(y_pred)
         d1_stats[perm_id] = test_stat(y_pred, y[:n_test])
-        print('D1 statistic, permutation {}: {}'.format(
-            perm_id, d1_stats[perm_id]))
+        if verbose:
+            print('D1 statistic, permutation {}: {}'.format(
+                perm_id, d1_stats[perm_id]))
 
     # Get params for D0.
     d0_preds = []
     d0_stats = np.zeros(num_perm)
-    predictions = []
     for perm_id in range(num_perm):
         perm_ids = np.random.choice(np.arange(n_test, n_samples), 
                                     n_samples - n_test, replace=True)
@@ -130,47 +135,18 @@ def indep_nn(x, y, z=None, num_perm=10, prop_test=.1,
         y_pred = clf.predict(x_z[:n_test])
         d0_preds.append(y_pred)
         d0_stats[perm_id] = test_stat(y_pred, y[:n_test])
-        print('D0 statistic, permutation {}: {}'.format(
-            perm_id, d0_stats[perm_id]))
+        if verbose:
+            print('D0 statistic, permutation {}: {}'.format(
+                perm_id, d0_stats[perm_id]))
 
     # Bootstrap the two difference in means of the two distributions.
     t_obs = np.mean(d0_stats) - np.mean(d1_stats)
     t_star, mu0s, mu1s = bootstrap(d0_stats, d1_stats)
     p_value = np.sum(t_star > t_obs) / float(t_star.size)
-    print('p-value {}.'.format(p_value))
-    if plot:
-        font = FontProperties()
-
-        plt.figure(figsize=(5.5, 5.5))
-        plt.subplot(2, 2, 1)
-        plt.plot(x[:, :1], y[:, :1], 'k.')
-        sort_ids = np.argsort(x_z[:n_test,0])
-        for y_pred_id, y_pred in enumerate(d1_preds):
-            plt.plot(x_z[sort_ids, :1], y_pred[sort_ids, :1], '-',
-                     color=(0, 1, 0, .4))
-        plt.plot(x_z[:n_test, :1], y_pred[:, :1] * np.nan, 'g-', 
-                 label='E[y|x,z]')
-
-        for y_pred_id, y_pred in enumerate(d0_preds):
-            plt.plot(x_z[sort_ids, :1], y_pred[sort_ids, :1], '-',
-                     color=(1, 0, 0, .4))
-        plt.plot(x_z[:n_test, :1], y_pred[:, :1] * np.nan, 'r-', 
-                 label='E[y|x]')
-
-        plt.legend(loc=0)
-
-        plt.subplot(2, 2, 2)
-        plt.hist(t_star, bins=50, normed=True)
-        plt.plot(d0_stats, np.zeros_like(d0_stats), 'rx',
-                 label=r'mse[y|x]$', clip_on=False, ms=10)
-        plt.plot(d1_stats, np.zeros_like(d1_stats), 'gx',
-                 label='mse[y|x,z]', clip_on=False, ms=10)
-        plt.plot(t_obs, [0], 'k*', ms=10, clip_on=False)
-        font.set_weight('heavy')
-        plt.text(t_obs-.01, .1, r't', fontproperties=font)
-        plt.text(-.3, .4, r'pdf(t$^*$)', fontproperties=font)
-        plt.legend(loc=0)
-        plt.show()
-
-    # Get the p-value.
-    return p_value
+    clf.close()
+    if plot_return:
+        return (p_value, x, y, x_z, d1_preds, d0_preds,
+                d1_stats, d0_stats, t_obs, t_star, n_test)
+    else:
+        # Get the p-value.
+        return p_value
