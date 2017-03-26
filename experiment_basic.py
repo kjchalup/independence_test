@@ -4,7 +4,7 @@ from collections import defaultdict
 import numpy as np
 import scipy as sp
 from scipy import io as sio
-from scipy.interpolate import interp1d
+from utils import sample_random_fn
 from independence_nn import indep_nn
 
 MAX_TIME = 30  # indep_nn time limit.
@@ -118,36 +118,67 @@ def test_postnonlinear_zfull(n_samples=1000, zdim=100, type='dep'):
         RESULTS[tname + '_pnl_' + type].append(pval)
 
 
-def test_postnonlinear(n_samples=1000, zdim=100, type='dep'):
+def make_pnl_data(n_samples=1000, zdim=1, type='dep'):
     assert type in ['dep', 'indep']
-    e_x = np.random.randn(n_samples, 1)
-    e_y = np.random.randn(n_samples, 1)
-    z = np.random.randn(n_samples, zdim)
+    e_x = np.random.randn(n_samples, 1) * .1
+    e_y = np.random.randn(n_samples, 1) * .1
+    z = np.random.rand(n_samples, zdim)
 
     # Make some random smooth nonlinear functions.
     f_base = np.linspace(z.min(), z.max(), 10)
-    fx = interp1d(f_base, np.random.rand(10), kind='cubic')
-    fy = interp1d(f_base, np.random.rand(10), kind='cubic')
+    fx = sample_random_fn(z.min(), z.max(), 10)
+    fy = sample_random_fn(z.min(), z.max(), 10)
 
     # Make postnonlinear data.
     x = fx(z[:, :1]) + e_x
-    gx_base = np.linspace(x.min(), x.max(), 10)
-    gx = interp1d(gx_base, np.random.rand(10), kind='cubic')
+    gx = sample_random_fn(x.min(), x.max(), 10)
     x = gx(x)
     y = fy(z[:, :1]) + e_y
-    gy_base = np.linspace(y.min(), y.max(), 10)
-    gy = interp1d(gy_base, np.random.rand(10), kind='cubic')
+    gy = sample_random_fn(y.min(), y.max(), 10)
     y = gy(y)
 
     if type == 'dep':
         noise = np.random.randn(n_samples, 1)
         x += noise
         y += noise
+    return x, y, z
 
+
+def test_postnonlinear(n_samples=1000, zdim=100, type='dep'):
+    x, y, z = make_pnl_data(n_samples, zdim, type)
     for tname in TESTS:
         pval = TESTS[tname](x, y, z, max_time=MAX_TIME)
         RESULTS[tname + '_pnl_' + type].append(pval)
 
 
+def make_mdn_data(n_samples=1000, type='dep', n_comp=3):
+    assert type in ['dep', 'indep']
+    z = np.random.rand(n_samples, 1)
+    mus = [sample_random_fn(z.min(), z.max(), 10, -4, 4) for _ in range(n_comp)]
+    stds = [sample_random_fn(z.min(), z.max(), 10, .01, .5) for _ in range(n_comp)]
+    comp_ids = np.random.choice(n_comp, n_samples)
+    x = np.concatenate([stds[comp_ids[z_id]](z[z_id]) * np.random.randn()
+         + mus[comp_ids[z_id]](z[z_id]) for z_id in range(n_samples)]).reshape(
+             n_samples, 1)
+
+    mus = [sample_random_fn(z.min(), z.max(), 10, -4, 4) for _ in range(n_comp)]
+    stds = [sample_random_fn(z.min(), z.max(), 10, .01, .5) for _ in range(n_comp)]
+    comp_ids = np.random.choice(n_comp, n_samples)
+    y = np.concatenate([stds[comp_ids[z_id]](z[z_id]) * np.random.randn()
+         + mus[comp_ids[z_id]](z[z_id]) for z_id in range(n_samples)]).reshape(
+             n_samples, 1)
+    if type == 'dep':
+        noise = np.random.randn(n_samples, 1)
+        x += noise
+        y += noise
+    return x, y, z
+
+def test_mdn(n_samples, type='dep', n_comp=3):
+    x, y, z = make_mdn_data(n_samples, type, n_comp)
+    for tname in TESTS:
+        pval = TESTS[tname](x, y, z, max_time=MAX_TIME)
+        RESULTS[tname + '_pnl_' + type].append(pval)
+
 if __name__=="__main__":
-    test_chaos(n_samples=1000, type='dep')
+    test_mdn(n_samples=300, type='dep')
+    print(RESULTS)

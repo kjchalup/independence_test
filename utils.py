@@ -1,6 +1,24 @@
 """ Various utility functions. """
 import numpy as np
+from scipy.interpolate import interp1d
 import nn
+
+def sample_random_fn(xmin=0, xmax=1, npts=10, ymin=0, ymax=1):
+    """ Sample a random function defined on the (xmin, xmax) interval.
+    
+    Args:
+        xmin (float): Function's domain's min.
+        xmax (float): Function's domain's max.
+        npts (int): Number of random points to interpolate in.
+        ymin (float): The function's smallest value.
+        ymax (float): The function's largest value.
+    
+    Returns:
+        f (interpolation object): A function that can be applied in its domain.
+    """
+    f_base = np.linspace(xmin, xmax, npts)
+    f = interp1d(f_base, np.random.rand(npts) * ymax + ymin, kind='cubic')
+    return f
 
 
 def nan_to_zero(data):
