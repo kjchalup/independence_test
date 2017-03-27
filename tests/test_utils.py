@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_equal
 sys.path.insert(0, os.path.abspath('..'))
-from utils import nan_to_zero, equalize_dimensions
+from utils import nan_to_zero, equalize_dimensions, pc_ks
 
 @pytest.fixture
 def xyz_data():
@@ -51,3 +51,15 @@ def test_equalize_dim_zsmall(xyz_data):
     assert x_new.shape[1] == 6, 'x dim wrong.'
     assert y_new.shape[1] == 4, 'y dim wrong.'
     assert z_new.shape[1] == 6, 'z dim wrong.'
+
+def test_pval_auc():
+    pvals = np.array([.01, .001])
+    auc, ks = pc_ks(pvals)
+    assert auc > .2
+
+def test_pval_ks():
+    pvals = np.array([.5, .9])
+    auc, ks = pc_ks(pvals)
+    assert ks > .1
+
+    

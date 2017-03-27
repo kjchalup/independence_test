@@ -144,6 +144,7 @@ def indep_nn(x, y, z=None, num_perm=10, prop_test=.1,
     t_star, mu0s, mu1s = bootstrap(d0_stats, d1_stats)
     p_value = np.sum(t_star > t_obs) / float(t_star.size)
     clf.close()
+    del clf
     if plot_return:
         return (p_value, x, y, x_z, d1_preds, d0_preds,
                 d1_stats, d0_stats, t_obs, t_star, n_test)

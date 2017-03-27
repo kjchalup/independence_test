@@ -7,35 +7,30 @@ from scipy import io as sio
 from utils import sample_random_fn
 from independence_nn import indep_nn
 
-MAX_TIME = 30  # indep_nn time limit.
+MAX_TIME = 60  # indep_nn time limit.
 TESTS = {'nn': indep_nn}  # Tests to compare.
 RESULTS = defaultdict(list)  # Hold all the results here.
 
-def test_discrete(n_samples=1000, xdim=1, ydim=1, type='dep'):
-    assert xdim == ydim, 'x dimensionality must match y dimensionality.'
+def make_discrete_data(n_samples=1000, dim=1):
     assert type in ['dep', 'indep']
-    z = np.random.dirichlet(alpha=np.ones(xdim+1), size=n_samples)
+    z = np.random.dirichlet(alpha=np.ones(dim+1), size=n_samples)
     x = np.vstack([np.random.multinomial(20, p) for p in z])[:, :-1]
     y = np.vstack([np.random.multinomial(20, p) for p in z])[:, :-1]
     z = z[:, :-1]
+    if type == 'dep':
+        return x, z, y
+    else:
+        return x, y, z
+
+
+def test_discrete(n_samples=1000, type='dep', dim=1):
+    make_discrete_data(n_samples, dim, type)
     for tname in TESTS:
-        if type == 'dep':
-            pval = TESTS[tname](
-                x, z, y, max_time=MAX_TIME, discrete=(True, False))
-        else:
-            pval = TESTS[tname](
-                x, y, z, max_time=MAX_TIME, discrete=(True, True))
+        pval = TESTS[tname](x, y, z, max_time=MAX_TIME, discrete=(True, False))
         RESULTS[tname + '_discrete_' + type].append(pval)
 
 
-def test_adversarial():
-    x = np.atleast_2d(np.linspace(0, 1, 1000)).T
-    y = np.zeros_like(x)
-    y[:500] = np.random.randn(500) * np.sqrt(.5)
-    y[500:] = np.random.randn(500) * np.sqrt(2)
-    return x, y
-
-def test_gaussian(n_samples=1000, xdim=1, ydim=1, type='dep'):
+def make_gaussian_data(n_samples=1000, type='dep', xdim=1, ydim=1):
     assert type in ['dep', 'indep']
     if type == 'dep':
         A = np.random.rand(xdim + ydim, xdim + ydim)
@@ -50,12 +45,18 @@ def test_gaussian(n_samples=1000, xdim=1, ydim=1, type='dep'):
                                           cov=np.dot(A, A.T), size=n_samples)
         y = np.random.multivariate_normal(mean=np.zeros(xdim),
                                           cov=np.dot(B, B.T), size=n_samples)
+    z = np.random.randn(n_samples, xdim)
+    return x, y, z
+
+
+def test_gaussian(n_samples=1000, xdim=1, ydim=1, type='dep'):
+    x, y, z = make_gaussian_data(n_samples, type, xdim, ydim)
     for tname in TESTS:
-        pval = TESTS[tname](x, y, max_time=MAX_TIME, discrete=(True, False))
+        pval = TESTS[tname](x, y, z, max_time=MAX_TIME)
         RESULTS[tname + '_gaussian_' + type].append(pval)
 
 
-def test_chaos(n_samples=1000, gamma=.5, type='dep'):
+def make_chaos_data(n_samples, gamma=.5, type='dep'):
     assert type in ['dep', 'indep']
     x = np.zeros((n_samples, 4))
     y = np.zeros((n_samples, 4))
@@ -70,14 +71,16 @@ def test_chaos(n_samples=1000, gamma=.5, type='dep'):
         y[step_id, 1] = y[step_id-1, 0]
     x[:, 2:] = np.random.randn(n_samples, 2) * .5
     y[:, 2:] = np.random.randn(n_samples, 2) * .5
+    if type == 'dep':
+        return y[1:], x[:-1], np.array(y[:-1])
+    else:
+        return x[1:], y[:-1], np.array(x[:-1])
 
+
+def test_chaos(n_samples=1000, gamma=.5, type='dep'):
+    x, y, z = make_chaos_data(n_samples, gamma, type)
     for tname in TESTS:
-        if type == 'dep':
-            pval = TESTS[tname](
-                y[1:], x[:-1], np.array(y[:-1]), max_time=MAX_TIME)
-        else:
-            pval = TESTS[tname](x[1:], y[:-1], 
-                                np.array(x[:-1]), max_time=MAX_TIME)
+        pval = TESTS[tname](x, y, z, max_time=MAX_TIME)
         RESULTS[tname + '_chaos_' + type].append(pval)
 
 
@@ -125,7 +128,6 @@ def make_pnl_data(n_samples=1000, zdim=1, type='dep'):
     z = np.random.rand(n_samples, zdim)
 
     # Make some random smooth nonlinear functions.
-    f_base = np.linspace(z.min(), z.max(), 10)
     fx = sample_random_fn(z.min(), z.max(), 10)
     fy = sample_random_fn(z.min(), z.max(), 10)
 
@@ -138,47 +140,20 @@ def make_pnl_data(n_samples=1000, zdim=1, type='dep'):
     y = gy(y)
 
     if type == 'dep':
-        noise = np.random.randn(n_samples, 1)
-        x += noise
-        y += noise
+        # noise = np.random.randn(n_samples, 1)
+        # x += noise
+        # y += noise
+        z = np.random.rand(n_samples, zdim)
     return x, y, z
 
 
-def test_postnonlinear(n_samples=1000, zdim=100, type='dep'):
+def test_pnl(n_samples=1000, zdim=100, type='dep'):
     x, y, z = make_pnl_data(n_samples, zdim, type)
     for tname in TESTS:
         pval = TESTS[tname](x, y, z, max_time=MAX_TIME)
         RESULTS[tname + '_pnl_' + type].append(pval)
 
 
-def make_mdn_data(n_samples=1000, type='dep', n_comp=3):
-    assert type in ['dep', 'indep']
-    z = np.random.rand(n_samples, 1)
-    mus = [sample_random_fn(z.min(), z.max(), 10, -4, 4) for _ in range(n_comp)]
-    stds = [sample_random_fn(z.min(), z.max(), 10, .01, .5) for _ in range(n_comp)]
-    comp_ids = np.random.choice(n_comp, n_samples)
-    x = np.concatenate([stds[comp_ids[z_id]](z[z_id]) * np.random.randn()
-         + mus[comp_ids[z_id]](z[z_id]) for z_id in range(n_samples)]).reshape(
-             n_samples, 1)
-
-    mus = [sample_random_fn(z.min(), z.max(), 10, -4, 4) for _ in range(n_comp)]
-    stds = [sample_random_fn(z.min(), z.max(), 10, .01, .5) for _ in range(n_comp)]
-    comp_ids = np.random.choice(n_comp, n_samples)
-    y = np.concatenate([stds[comp_ids[z_id]](z[z_id]) * np.random.randn()
-         + mus[comp_ids[z_id]](z[z_id]) for z_id in range(n_samples)]).reshape(
-             n_samples, 1)
-    if type == 'dep':
-        noise = np.random.randn(n_samples, 1)
-        x += noise
-        y += noise
-    return x, y, z
-
-def test_mdn(n_samples, type='dep', n_comp=3):
-    x, y, z = make_mdn_data(n_samples, type, n_comp)
-    for tname in TESTS:
-        pval = TESTS[tname](x, y, z, max_time=MAX_TIME)
-        RESULTS[tname + '_pnl_' + type].append(pval)
-
 if __name__=="__main__":
-    test_mdn(n_samples=300, type='dep')
+    test_pnl(n_samples=1000, type='dep', zdim=1000)
     print(RESULTS)

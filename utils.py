@@ -1,7 +1,21 @@
 """ Various utility functions. """
 import numpy as np
 from scipy.interpolate import interp1d
+from statsmodels.distributions.empirical_distribution import ECDF as ecdf
+from scipy import integrate
+from scipy.stats import kstest
 import nn
+
+
+def pc_ks(pvals):
+    """ Compute the area under power curve and the Kolmogorov
+    p-value of the hypothesis that pvals come from the uniform distro on (0, 1).
+    """
+    pvals = np.sort(pvals)
+    cdf = ecdf(pvals)
+    auc[0] = integrate.quad(cdf, 0, 1, points=pvals)
+    _, ks = kstest(pvals, 'uniform')
+    return auc, ks
 
 def sample_random_fn(xmin=0, xmax=1, npts=10, ymin=0, ymax=1):
     """ Sample a random function defined on the (xmin, xmax) interval.
@@ -16,10 +30,11 @@ def sample_random_fn(xmin=0, xmax=1, npts=10, ymin=0, ymax=1):
     Returns:
         f (interpolation object): A function that can be applied in its domain.
     """
-    f_base = np.linspace(xmin, xmax, npts)
-    f = interp1d(f_base, np.random.rand(npts) * ymax + ymin, kind='cubic')
+    f_base = np.sort(np.random.choice(
+        np.linspace(xmin, xmax, 10000)[1:-1], npts-2))
+    f_base = np.concatenate([[xmin], f_base, [xmax]])
+    f = interp1d(f_base, np.random.rand(npts) * ymax + ymin, kind='linear')
     return f
-
 
 def nan_to_zero(data):
     """ Convert all nans to zeros. """

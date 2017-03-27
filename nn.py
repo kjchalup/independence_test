@@ -110,9 +110,10 @@ class NN(object):
         self.sess.run(self.init_op)
 
     def close(self):
-        """ Close the session to free memory. Note: this 
+        """ Close the session and reset the graph. Note: this 
         will make this neural net unusable. """
         self.sess.close()
+        tf.reset_default_graph()
 
     def restart(self):
         """ Re-initialize the network. """
