@@ -4,29 +4,33 @@ from scipy.interpolate import interp1d
 from statsmodels.distributions.empirical_distribution import ECDF as ecdf
 from scipy import integrate
 from scipy.stats import kstest
-import nn
 
 
 def pc_ks(pvals):
     """ Compute the area under power curve and the Kolmogorov
-    p-value of the hypothesis that pvals come from the uniform distro on (0, 1).
+    p-value of the hypothesis that pvals come from the uniform
+    distribution with support (0, 1).
     """
     pvals = np.sort(pvals)
     cdf = ecdf(pvals)
-    auc[0] = integrate.quad(cdf, 0, 1, points=pvals)
+    auc = 0
+    for (pv1, pv2) in zip(pvals[:-1], pvals[1:]):
+        auc += integrate.quad(cdf, pv1, pv2)[0]
+    auc += integrate.quad(cdf, pvals[-1], 1)[0]
     _, ks = kstest(pvals, 'uniform')
     return auc, ks
 
+
 def sample_random_fn(xmin=0, xmax=1, npts=10, ymin=0, ymax=1):
     """ Sample a random function defined on the (xmin, xmax) interval.
-    
+
     Args:
         xmin (float): Function's domain's min.
         xmax (float): Function's domain's max.
         npts (int): Number of random points to interpolate in.
         ymin (float): The function's smallest value.
         ymax (float): The function's largest value.
-    
+
     Returns:
         f (interpolation object): A function that can be applied in its domain.
     """
@@ -49,9 +53,9 @@ def equalize_dimensions(x, y, z=None):
         x (n_samples, xdim): Data.
         y (n_samples, ydim): Data.
         z (n_samples, zdim): Data.
-    
+
     Returns
-        x, y, z concatenated with their own copies along the 1st 
+        x, y, z concatenated with their own copies along the 1st
             axis so that max(xdim, ydim, zdim) is not much bigger
             than min(xdim_new, ydim_new, zdim_new).
     """
@@ -68,6 +72,3 @@ def equalize_dimensions(x, y, z=None):
         return x_new, y_new, z_new
     else:
         return x_new, y_new
-    
-    
-    

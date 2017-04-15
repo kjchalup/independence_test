@@ -110,7 +110,7 @@ class NN(object):
         self.sess.run(self.init_op)
 
     def close(self):
-        """ Close the session and reset the graph. Note: this 
+        """ Close the session and reset the graph. Note: this
         will make this neural net unusable. """
         self.sess.close()
         tf.reset_default_graph()
@@ -132,11 +132,11 @@ class NN(object):
         try:
             x = self.scaler_x.transform(x)
         except NotFittedError:
-            print('Warning: scalers are not fitted.')
+            print 'Warning: scalers are not fitted.'
         y_pred = self.sess.run(self.y_pred, {self.x_tf: x})
         return self.scaler_y.inverse_transform(y_pred)
 
-    def fit(self, x, y, num_epochs=10, batch_size=32, 
+    def fit(self, x, y, num_epochs=10, batch_size=32,
             lr=1e-3, max_time=np.inf, verbose=True, **kwargs):
         """ Train the MDN to maximize the data likelihood.
 
@@ -197,16 +197,17 @@ class NN(object):
             val_losses[epoch_id] = val_loss
             if val_loss < best_val:
                 best_val = val_loss
-                model_path = self.saver.save(self.sess, 'saved_data/model')
+                model_path = self.saver.save(
+                    self.sess, 'independence_test/saved_data/model')
 
             tr_time = time.time() - start_time
             if verbose:
                 sys.stdout.write(('\rTraining epoch {}, time {}s. Tr loss '
                                   '{:.4g}, val loss {:.4g}.').format(
-                                      epoch_id, int(tr_time), 
-                                       tr_loss, val_loss))
+                                      epoch_id, int(tr_time),
+                                      tr_loss, val_loss))
                 sys.stdout.flush()
-        
+
             if tr_time > max_time:
                 break
 
