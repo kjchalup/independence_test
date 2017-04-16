@@ -8,8 +8,9 @@ import matlab.engine
 
 KCIPT_PATH = r'~/projects/kcipt/'
 ENG = matlab.engine.start_matlab()
+ENG.addpath('independence_test/methods/', nargout=1)
 ENG.addpath(KCIPT_PATH, nargout=1)
-ENG.addpath(os.path.join(KCIPT_PATH, 'gmpl-matlab/gpml'), nargout=1)
+ENG.addpath(os.path.join(KCIPT_PATH, 'gpml-matlab/gpml'), nargout=1)
 ENG.addpath(os.path.join(KCIPT_PATH, 'kcipt'), nargout=1)
 ENG.addpath(os.path.join(KCIPT_PATH, 'algorithms'), nargout=1)
 ENG.addpath(os.path.join(KCIPT_PATH, 'data'), nargout=1)
