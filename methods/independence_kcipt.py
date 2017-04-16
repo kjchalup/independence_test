@@ -1,15 +1,21 @@
-""" Wrapper for the KCIT conditional independence test.
+""" Wrapper for the KCIPT conditional independence test.
 You'll need Matlab and the Python-Matlab engine installed.
 Then, download this repository https://github.com/garydoranjr/kcipt
 first and set its path below. """
-import matlab.engine
+import os
 import signal
+import matlab.engine
 
 KCIPT_PATH = r'~/projects/kcipt/'
 ENG = matlab.engine.start_matlab()
-ENG.addpath(ENG.genpath(KCIPT_PATH, nargout=1))
+ENG.addpath(KCIPT_PATH, nargout=1)
+ENG.addpath(os.path.join(KCIPT_PATH, 'gmpl-matlab/gpml'), nargout=1)
+ENG.addpath(os.path.join(KCIPT_PATH, 'kcipt'), nargout=1)
+ENG.addpath(os.path.join(KCIPT_PATH, 'algorithms'), nargout=1)
+ENG.addpath(os.path.join(KCIPT_PATH, 'data'), nargout=1)
+ENG.addpath(os.path.join(KCIPT_PATH, 'experiments'), nargout=1)
 
-def indep_kcit(x, y, z, max_time=60, **kwargs):
+def indep_kcipt(x, y, z, max_time=60, **kwargs):
     """ Run the CHSIC independence test.
 
     Args:
@@ -30,13 +36,12 @@ def indep_kcit(x, y, z, max_time=60, **kwargs):
     signal.signal(signal.SIGALRM, signal_handler)
     signal.alarm(max_time)
     try:
-        _, _, pval, _, _ = ENG.CInd_test_new_withGP(matlab.double(x.tolist()),
-                                                    matlab.double(y.tolist()),
-                                                    matlab.double(z.tolist()),
-                                                    0.05,
-                                                    float(0), nargout=5)
+        pval = ENG.kciptwrapperTest(matlab.double(x.tolist()),
+                                    matlab.double(y.tolist()),
+                                    matlab.double(z.tolist()),
+                                    nargout=1)
     except StopIteration:
-        print 'KCIT timed out!'
+        print 'KCIPT timed out!'
     signal.alarm(0) # Cancel the alarm.
 
     return pval
