@@ -1,4 +1,4 @@
-""" Wrapper for the CHSIC conditional independence test.
+""" Wrapper for the KCIT conditional independence test.
 You'll need Matlab and the Python-Matlab engine installed.
 Then, download this repository https://github.com/garydoranjr/kcipt
 first and set its path below. """
@@ -9,7 +9,7 @@ KCIPT_PATH = r'~/projects/kcipt/'
 ENG = matlab.engine.start_matlab()
 ENG.addpath(ENG.genpath(KCIPT_PATH, nargout=1))
 
-def indep_chsic(x, y, z, num_perm=1000, max_time=60, **kwargs):
+def indep_kcit(x, y, z, max_time=60, **kwargs):
     """ Run the CHSIC independence test.
 
     Args:
@@ -31,13 +31,13 @@ def indep_chsic(x, y, z, num_perm=1000, max_time=60, **kwargs):
     signal.signal(signal.SIGALRM, signal_handler)
     signal.alarm(max_time)
     try:
-        _, pval, _ = ENG.hsiccondTestIC(matlab.double(x.tolist()),
-                                        matlab.double(y.tolist()),
-                                        matlab.double(z.tolist()),
-                                        0.05,
-                                        float(num_perm), nargout=3)
+        _, _, pval, _, _ = ENG.CInd_test_new_withGP(matlab.double(x.tolist()),
+                                                    matlab.double(y.tolist()),
+                                                    matlab.double(z.tolist()),
+                                                    0.05,
+                                                    float(0), nargout=5)
     except StopIteration:
-        print 'CHSIC timed out!'
+        print 'KCIT timed out!'
     signal.alarm(0) # Cancel the alarm.
 
     return pval

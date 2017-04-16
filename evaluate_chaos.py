@@ -40,9 +40,9 @@ if __name__ == "__main__":
                     # Run the trials.
                     for trial_id in range(N_TRIALS):
                         PVAL_I.append(method(xi, yi, zi, max_time=MAX_TIME,
-                                             test_type='min', verbose=True))
+                                             test_type='min', verbose=False))
                         PVAL_D.append(method(xd, yd, zd, max_time=MAX_TIME,
-                                             test_type='min', verbose=True))
+                                             test_type='min', verbose=False))
                         print('Trial {}. p_d {:.4g}, p_i {:.4g}.'.format(
                             trial_id, PVAL_D[-1], PVAL_I[-1]))
 
