@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     for n_samples in SAMPLE_NUMS:
         for dim in [1]:
-            for gamma in [.4, .5]:
+            for gamma in [.5]:
                 xd, yd, zd = make_data(
                     type='dep', n_samples=n_samples, gamma=gamma)
 
@@ -41,9 +41,8 @@ if __name__ == "__main__":
                     for trial_id in range(N_TRIALS):
                         PVAL_I.append(method(xi, yi, zi, max_time=MAX_TIME,
                                              test_type='min', verbose=True))
-                        # PVAL_D.append(method(xd, yd, zd, max_time=MAX_TIME,
-                        #                      test_type='min', verbose=True))
-                        PVAL_D.append(1)
+                        PVAL_D.append(method(xd, yd, zd, max_time=MAX_TIME,
+                                             test_type='min', verbose=True))
                         print('Trial {}. p_d {:.4g}, p_i {:.4g}.'.format(
                             trial_id, PVAL_D[-1], PVAL_I[-1]))
 

@@ -29,6 +29,7 @@ def make_gaussian_data(n_samples=1000, type='dep', xdim=1, ydim=1, zdim=1):
 def make_chaos_data(n_samples, gamma=.5, type='dep'):
     """ X and Y follow chaotic dynamics. Larger gamma = easier task. """
     assert type in ['dep', 'indep']
+    n_samples += 1
     x = np.zeros((n_samples, 4))
     y = np.zeros((n_samples, 4))
     x[-1, :] = np.random.randn(4) * .01
@@ -43,9 +44,9 @@ def make_chaos_data(n_samples, gamma=.5, type='dep'):
     x[:, 2:] = np.random.randn(n_samples, 2) * .5
     y[:, 2:] = np.random.randn(n_samples, 2) * .5
     if type == 'dep':
-        return y[1:], x[:-1], np.array(y[:-1])
+        return y[1:], x[:-1], np.array(y[:-1, :2])
     else:
-        return x[1:], y[:-1], np.array(x[:-1])
+        return x[1:], y[:-1], np.array(x[:-1, :2])
 
 
 def make_pnl_data(n_samples=1000, zdim=1, type='dep'):
