@@ -11,6 +11,8 @@ def pc_ks(pvals):
     p-value of the hypothesis that pvals come from the uniform
     distribution with support (0, 1).
     """
+    if pvals.size == 0:
+        return [-1, -1]
     pvals = np.sort(pvals)
     cdf = ecdf(pvals)
     auc = 0

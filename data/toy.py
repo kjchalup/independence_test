@@ -24,7 +24,7 @@ def make_gaussian_data(
 
     C = np.random.rand(complexity, complexity)
     z = np.random.multivariate_normal(
-        mean=np.zeros(complexity), cov=np.dot(C, C.T))
+        mean=np.zeros(complexity), cov=np.dot(C, C.T), size=n_samples)
     return x, y, z
 
 

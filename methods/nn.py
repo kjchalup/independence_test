@@ -137,7 +137,8 @@ class NN(object):
         return self.scaler_y.inverse_transform(y_pred)
 
     def fit(self, x, y, num_epochs=10, batch_size=32,
-            lr=1e-3, max_time=np.inf, verbose=True, **kwargs):
+            lr=1e-3, max_time=np.inf, verbose=True,
+            max_nonimprovs=30, **kwargs):
         """ Train the MDN to maximize the data likelihood.
 
         Args:
@@ -151,6 +152,8 @@ class NN(object):
             max_time (float): Maximum training time, in seconds. Training will
                 stop if max_time is up OR num_epochs is reached.
             verbose (bool): Display training progress messages (or not).
+            max_nonimprovs (int): Number of epochs allowed without improving
+                the validation score before quitting.
 
         Returns:
             tr_losses (num_epochs,): Training errors (zero-padded).
@@ -196,6 +199,7 @@ class NN(object):
             tr_losses[epoch_id] = tr_loss
             val_losses[epoch_id] = val_loss
             if val_loss < best_val:
+                last_improved = epoch_id
                 best_val = val_loss
                 model_path = self.saver.save(
                     self.sess, 'independence_test/saved_data/model')
@@ -203,12 +207,12 @@ class NN(object):
             tr_time = time.time() - start_time
             if verbose:
                 sys.stdout.write(('\rTraining epoch {}, time {}s. Tr loss '
-                                  '{:.4g}, val loss {:.4g}.').format(
-                                      epoch_id, int(tr_time),
-                                      tr_loss, val_loss))
+                                  '{:.4g}, val loss {:.4g}, best val {:.4g}.'
+                              ).format(epoch_id, int(tr_time),
+                                       tr_loss, val_loss, best_val))
                 sys.stdout.flush()
 
-            if tr_time > max_time:
+            if tr_time > max_time or epoch_id - last_improved > max_nonimprovs:
                 break
 
         self.saver.restore(self.sess, model_path)

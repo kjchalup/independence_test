@@ -6,6 +6,7 @@ import os
 import signal
 import matlab.engine
 
+
 KCIPT_PATH = r'~/projects/kcipt/'
 ENG = matlab.engine.start_matlab()
 ENG.addpath('independence_test/methods/', nargout=1)
@@ -15,6 +16,7 @@ ENG.addpath(os.path.join(KCIPT_PATH, 'kcipt'), nargout=1)
 ENG.addpath(os.path.join(KCIPT_PATH, 'algorithms'), nargout=1)
 ENG.addpath(os.path.join(KCIPT_PATH, 'data'), nargout=1)
 ENG.addpath(os.path.join(KCIPT_PATH, 'experiments'), nargout=1)
+
 
 def indep_kcipt(x, y, z, max_time=60, **kwargs):
     """ Run the CHSIC independence test.
@@ -37,10 +39,10 @@ def indep_kcipt(x, y, z, max_time=60, **kwargs):
     signal.signal(signal.SIGALRM, signal_handler)
     signal.alarm(max_time)
     try:
-        pval = ENG.kciptwrapperTest(matlab.double(x.tolist()),
-                                    matlab.double(y.tolist()),
-                                    matlab.double(z.tolist()),
-                                    nargout=1)
+        pval = ENG.kciptwrapper(matlab.double(x.tolist()),
+                                matlab.double(y.tolist()),
+                                matlab.double(z.tolist()),
+                                nargout=1)
     except StopIteration:
         print 'KCIPT timed out!'
     signal.alarm(0) # Cancel the alarm.
