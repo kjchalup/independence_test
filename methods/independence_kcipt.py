@@ -2,21 +2,9 @@
 You'll need Matlab and the Python-Matlab engine installed.
 Then, download this repository https://github.com/garydoranjr/kcipt
 first and set its path below. """
-import os
-import signal
-import matlab.engine
-
-
-KCIPT_PATH = r'~/projects/kcipt/'
-ENG = matlab.engine.start_matlab()
-ENG.addpath('independence_test/methods/', nargout=1)
-ENG.addpath(KCIPT_PATH, nargout=1)
-ENG.addpath(os.path.join(KCIPT_PATH, 'gpml-matlab/gpml'), nargout=1)
-ENG.addpath(os.path.join(KCIPT_PATH, 'kcipt'), nargout=1)
-ENG.addpath(os.path.join(KCIPT_PATH, 'algorithms'), nargout=1)
-ENG.addpath(os.path.join(KCIPT_PATH, 'data'), nargout=1)
-ENG.addpath(os.path.join(KCIPT_PATH, 'experiments'), nargout=1)
-
+import matlab
+import time
+from independence_test import MATLAB_ENGINE
 
 def indep_kcipt(x, y, z, max_time=60, **kwargs):
     """ Run the CHSIC independence test.
@@ -30,21 +18,23 @@ def indep_kcipt(x, y, z, max_time=60, **kwargs):
 
     Returns:
         p (float): The p-value for the null hypothesis
-            that x is independent of y.
+            that x is independent of y. If execution time exceeds `max_time`,
+            return -1. If Matlab fails, return -2.
     """
-    pval = -1
-    def signal_handler(signum, frame):
-        raise StopIteration
-
-    signal.signal(signal.SIGALRM, signal_handler)
-    signal.alarm(max_time)
     try:
-        pval = ENG.kciptwrapper(matlab.double(x.tolist()),
-                                matlab.double(y.tolist()),
-                                matlab.double(z.tolist()),
-                                nargout=1)
-    except StopIteration:
-        print 'KCIPT timed out!'
-    signal.alarm(0) # Cancel the alarm.
+        pval = MATLAB_ENGINE.kciptwrapper(
+            matlab.double(x.tolist()), matlab.double(y.tolist()),
+            matlab.double(z.tolist()), nargout=1, async=True)
 
-    return pval
+        for _ in range(max_time):
+            time.sleep(1)
+            if pval.done():
+                return pval.result()
+
+    except matlab.engine.MatlabExecutionError:
+        print('Matlab failure.')
+        return -2
+
+    print('Out of time.')
+    pval.cancel()
+    return -1

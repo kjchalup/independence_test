@@ -1,6 +1,8 @@
-""" Evaluate available methods on the chaos dataset.
+""" Evaluate available methods' power and size.
+argv[1] should be the name of the dataset to use (see
+evaluation_parameters.py).
 
-The results are saved to results/chaos_results.pkl.
+The results are saved to SAVE_DIR/{argv[1]}_results.pkl.
 """
 import os
 import sys

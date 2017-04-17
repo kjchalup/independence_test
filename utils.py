@@ -5,6 +5,10 @@ from statsmodels.distributions.empirical_distribution import ECDF as ecdf
 from scipy import integrate
 from scipy.stats import kstest
 
+class TimeoutException(Exception):
+    """ Exception to thrown when a function times out. """
+    pass
+
 
 def pc_ks(pvals):
     """ Compute the area under power curve and the Kolmogorov

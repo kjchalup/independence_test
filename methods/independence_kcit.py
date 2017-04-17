@@ -2,12 +2,9 @@
 You'll need Matlab and the Python-Matlab engine installed.
 Then, download this repository https://github.com/garydoranjr/kcipt
 first and set its path below. """
-import matlab.engine
-import signal
-
-KCIPT_PATH = r'~/projects/kcipt/'
-ENG = matlab.engine.start_matlab()
-ENG.addpath(ENG.genpath(KCIPT_PATH, nargout=1))
+import time
+import matlab
+from independence_test import MATLAB_ENGINE
 
 def indep_kcit(x, y, z, max_time=60, **kwargs):
     """ Run the CHSIC independence test.
@@ -21,22 +18,24 @@ def indep_kcit(x, y, z, max_time=60, **kwargs):
 
     Returns:
         p (float): The p-value for the null hypothesis
-            that x is independent of y.
+            that x is independent of y. If execution time exceeds `max_time`,
+            return -1. If Matlab fails, return -2.
     """
-    pval = -1
-    def signal_handler(signum, frame):
-        raise StopIteration
-
-    signal.signal(signal.SIGALRM, signal_handler)
-    signal.alarm(max_time)
     try:
-        _, _, pval, _, _ = ENG.CInd_test_new_withGP(matlab.double(x.tolist()),
-                                                    matlab.double(y.tolist()),
-                                                    matlab.double(z.tolist()),
-                                                    0.05,
-                                                    float(0), nargout=5)
-    except StopIteration:
-        print 'KCIT timed out!'
-    signal.alarm(0) # Cancel the alarm.
+        pval = MATLAB_ENGINE.CInd_test_new_withGP(
+            matlab.double(x.tolist()), matlab.double(y.tolist()),
+            matlab.double(z.tolist()), 0.05, float(0),
+            nargout=5, async=True)
 
-    return pval
+        for _ in range(max_time):
+            time.sleep(1)
+            if pval.done():
+                return pval.result()[2]
+
+    except matlab.engine.MatlabExecutionError:
+        print('Matlab failure.')
+        return -2
+
+    print('Out of time.')
+    pval.cancel()
+    return -1

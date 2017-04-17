@@ -44,7 +44,7 @@ def bootstrap(h0, h1, f, B=10000):
 
 def indep_nn(x, y, z=None, num_perm=10, prop_test=.1,
              max_time=60, discrete=(False, False),
-             plot_return=False, test_type='min', verbose=True, **kwargs):
+             plot_return=False, test_type='min', verbose=False, **kwargs):
     """ The neural net probabilistic independence test.
     See Chalupka, Perona, Eberhardt 2017.
 
