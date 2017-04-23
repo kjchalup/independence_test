@@ -7,7 +7,7 @@ from sklearn.exceptions import NotFittedError
 import tensorflow as tf
 
 
-def define_nn(x_tf, y_dim, Ws, bs, tied_covar=False):
+def define_nn(x_tf, y_dim, Ws, bs, keep_prob, tied_covar=False):
     """ Define a Neural Network.
 
     The architecture of the network is deifned by the Ws, list of weight
@@ -20,6 +20,7 @@ def define_nn(x_tf, y_dim, Ws, bs, tied_covar=False):
         y_dim: Output data dimensionality.
         Ws: List of weight tensors.
         bs: List of bias tensors.
+        keep_prob: Dropout probability of keeping a unit on.
 
     Returns:
         out: Predicted y.
@@ -43,6 +44,7 @@ def define_nn(x_tf, y_dim, Ws, bs, tied_covar=False):
     for layer_id, (W, b) in enumerate(zip(Ws[1:], bs[1:])):
         with tf.name_scope('hidden{}'.format(layer_id)):
             out = nonlin(out)
+            out = tf.nn.dropout(out, keep_prob=keep_prob)
             out = tf.add(tf.matmul(out, W), b)
 
     return out
@@ -87,8 +89,11 @@ class NN(object):
                    for num_units in arch]
         self.bs.append(tf.Variable(tf.zeros(self.y_dim), dtype=tf.float32))
 
+        # Initialize dropout keep_prob.
+        self.keep_prob = tf.placeholder(tf.float32)
+
         # Define the MDN outputs as a function of input data.
-        self.y_pred = define_nn(self.x_tf, y_dim, self.Ws, self.bs)
+        self.y_pred = define_nn(self.x_tf, y_dim, self.Ws, self.bs, self.keep_prob)
 
         # Define the loss function: MSE.
         self.loss_tf = tf.losses.mean_squared_error(self.y_tf, self.y_pred)
@@ -133,11 +138,11 @@ class NN(object):
             x = self.scaler_x.transform(x)
         except NotFittedError:
             print 'Warning: scalers are not fitted.'
-        y_pred = self.sess.run(self.y_pred, {self.x_tf: x})
+        y_pred = self.sess.run(self.y_pred, {self.x_tf: x, self.keep_prob: 1.})
         return self.scaler_y.inverse_transform(y_pred)
 
     def fit(self, x, y, num_epochs=10, batch_size=32,
-            lr=1e-3, max_time=np.inf, verbose=True,
+            lr=1e-3, max_time=np.inf, verbose=False,
             max_nonimprovs=30, **kwargs):
         """ Train the MDN to maximize the data likelihood.
 
@@ -187,15 +192,18 @@ class NN(object):
                                      (batch_id + 1) * batch_size]
                 tr_loss += self.sess.run(
                     self.loss_tf, {self.x_tf: x_tr[batch_ids],
-                                   self.y_tf: y_tr[batch_ids]})
+                                   self.y_tf: y_tr[batch_ids],
+                                   self.keep_prob: 1.})
                 self.sess.run(self.train_op_tf,
                               {self.x_tf: x_tr[batch_ids],
                                self.y_tf: y_tr[batch_ids],
+                               self.keep_prob: .5,
                                self.lr_tf: lr})
             tr_loss /= batch_num
             val_loss = self.sess.run(self.loss_tf,
                                      {self.x_tf: x_val,
-                                      self.y_tf: y_val})
+                                      self.y_tf: y_val,
+                                      self.keep_prob: 1.})
             tr_losses[epoch_id] = tr_loss
             val_losses[epoch_id] = val_loss
             if val_loss < best_val:

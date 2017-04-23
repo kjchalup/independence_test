@@ -6,6 +6,7 @@ The results are saved to SAVE_DIR/{argv[1]}_results.pkl.
 """
 import os
 import sys
+import time
 from collections import defaultdict
 import joblib
 import numpy as np
@@ -23,17 +24,17 @@ if __name__ == "__main__":
         RESULTS = joblib.load(SAVE_FNAME)
     except IOError:
         RESULTS = defaultdict(list)
-
-    for n_samples in SAMPLE_NUMS:
-        for dim in dataset[2]:
-            for trial_id in range(N_TRIALS):
+    
+    t_start = time.time()
+    for trial_id in range(N_TRIALS):
+        for n_samples in SAMPLE_NUMS:
+            for dim in dataset[2]:
                 for param in dataset[1]:
                     xd, yd, zd = dataset[0](type='dep', n_samples=n_samples,
                                             dim=dim, complexity=param)
 
                     xi, yi, zi = dataset[0](type='indep', n_samples=n_samples,
                                             dim=dim, complexity=param)
-
                     for method_name in METHODS:
                         # Set up the storage.
                         key = '{}_{}_{}mt_{}samples_{}dim_{}complexity'.format(
@@ -44,9 +45,10 @@ if __name__ == "__main__":
                         print '=' * 70
 
                         # Run the trials.
-                        pval_i = method(xi, yi, zi, max_time=MAX_TIME)
                         pval_d = method(xd, yd, zd, max_time=MAX_TIME)
-                        print('p_d {:.4g}, p_i {:.4g}.'.format(pval_d, pval_i))
+                        pval_i = method(xi, yi, zi, max_time=MAX_TIME)
+                        print('(trial {}, time {}) p_d {:.4g}, p_i {:.4g}.'.format(
+                            trial_id, time.time()-t_start, pval_d, pval_i))
 
                         # Pickle the results.
                         RESULTS[key].append((pval_d, pval_i))

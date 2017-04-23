@@ -2,4 +2,5 @@ from independence_test.methods.independence_nn import indep_nn
 from independence_test.methods.independence_rand import indep_rand
 from independence_test.methods.independence_chsic import indep_chsic
 from independence_test.methods.independence_kcit import indep_kcit
+from independence_test.methods.independence_rcit import indep_rcit
 from independence_test.methods.independence_kcipt import indep_kcipt

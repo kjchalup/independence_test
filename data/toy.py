@@ -4,10 +4,11 @@ from independence_test.utils import sample_random_fn
 
 
 def make_gaussian_data(
-        n_samples=1000, type='dep', dim=1, complexity=1):
+        n_samples=1000, type='dep', dim=1, complexity=None):
     """ X and Y are both Gaussian. Z is another random vector,
     independent of both X and Y. `complexity` indicates dim(Z)."""
     assert type in ['dep', 'indep']
+    complexity = complexity or dim
     if type == 'dep':
         A = np.random.rand(2 * dim, 2 * dim)
         xy = np.random.multivariate_normal(mean=np.zeros(2 * dim),
@@ -59,20 +60,22 @@ def make_pnl_data(n_samples=1000, type='dep', complexity=1, **kwargs):
     e_y = np.random.randn(n_samples, 1) * .1
     z = np.random.rand(n_samples, complexity)
 
-    # Make some random smooth nonlinear functions.
+    # Make ANM data.
     fx = sample_random_fn(z.min(), z.max(), 10)
+    x = fx(z[:, :1]) + e_x
     fy = sample_random_fn(z.min(), z.max(), 10)
+    y = fy(z[:, :1]) + e_y
 
     # Make postnonlinear data.
-    x = fx(z[:, :1]) + e_x
-    gx = sample_random_fn(x.min(), x.max(), 10)
-    x = gx(x)
-    y = fy(z[:, :1]) + e_y
-    gy = sample_random_fn(y.min(), y.max(), 10)
-    y = gy(y)
+    #gx = sample_random_fn(x.min(), x.max(), 10)
+    #x = gx(x)
+    #gy = sample_random_fn(y.min(), y.max(), 10)
+    #y = gy(y)
 
     if type == 'dep':
-        z = np.random.rand(n_samples, complexity)
+        e_xy = np.random.randn(n_samples, 1) * .5
+        x += e_xy
+        y += e_xy
 
     return x, y, z
 
@@ -80,11 +83,12 @@ def make_pnl_data(n_samples=1000, type='dep', complexity=1, **kwargs):
 def make_pnl_zfull_data(n_samples=1000, complexity=100, type='dep', **kwargs):
     """ Post-nonlinear data, all coordinates of z are relevant. """
     assert type in ['dep', 'indep']
-    e_x = np.random.randn(n_samples, 1)
-    e_y = np.random.randn(n_samples, 1)
-    z = np.random.randn(n_samples, complexity)
+    e_x = np.random.randn(n_samples, 1) * .1
+    e_y = np.random.randn(n_samples, 1) * .1
+    z = np.random.rand(n_samples, complexity)
 
     # Make some random smooth nonlinear functions.
+    x = y = 0
     for z_id in range(complexity):
         fx = sample_random_fn(z.min(), z.max(), 10)
         fy = sample_random_fn(z.min(), z.max(), 10)
@@ -94,14 +98,16 @@ def make_pnl_zfull_data(n_samples=1000, complexity=100, type='dep', **kwargs):
         y += fx(z[:, z_id : z_id + 1])
 
     x += e_x
-    gx = sample_random_fn(x.min(), x.max(), 10)
-    x = gx(x)
+    #gx = sample_random_fn(x.min(), x.max(), 10)
+    #x = gx(x)
     y += e_y
-    gy = sample_random_fn(y.min(), y.max(), 10)
-    y = gy(y)
+    #gy = sample_random_fn(y.min(), y.max(), 10)
+    #y = gy(y)
 
     if type == 'dep':
-        z = np.random.rand(n_samples, complexity)
+        e_xy = np.random.randn(n_samples, 1) * .5
+        x += e_xy
+        y += e_xy
 
     return x, y, z
 
@@ -122,3 +128,15 @@ def make_discrete_data(n_samples=1000, dim=1, type='dep', complexity=20):
         return x, z, y
     else:
         return x, y, z
+
+
+def make_trivial_data(n_samples=1000, dim=1, type='dep', **kwargs):
+    """ Make x = y if type = 'dep', else make x and y uniform random. """
+    z = np.random.randn(n_samples, dim)
+    if type == 'dep':
+        x = np.random.randn(n_samples, dim)
+        y = x
+    else:
+        x = np.random.randn(n_samples, dim)
+        y = np.random.randn(n_samples, dim)
+    return x, y, z

@@ -7,7 +7,7 @@ import matlab
 from independence_test import MATLAB_ENGINE
 
 def indep_kcit(x, y, z, max_time=60, **kwargs):
-    """ Run the CHSIC independence test.
+    """ Run the RCIT independence test.
 
     Args:
         x (n_samples, x_dim): First variable.

@@ -17,7 +17,7 @@ def pc_ks(pvals):
     """
     if pvals.size == 0:
         return [-1, -1]
-    if -1 in pvals:
+    if -1 in pvals or -2 in pvals:
         return [-1, -1]
     pvals = np.sort(pvals)
     cdf = ecdf(pvals)

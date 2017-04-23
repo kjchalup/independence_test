@@ -44,7 +44,7 @@ def bootstrap(h0, h1, f, B=10000):
 
 def indep_nn(x, y, z=None, num_perm=10, prop_test=.1,
              max_time=60, discrete=(False, False),
-             plot_return=False, test_type='min', verbose=False, **kwargs):
+             plot_return=False, test_type='min', verbose=True, **kwargs):
     """ The neural net probabilistic independence test.
     See Chalupka, Perona, Eberhardt 2017.
 
@@ -66,7 +66,7 @@ def indep_nn(x, y, z=None, num_perm=10, prop_test=.1,
         p (float): The p-value for the null hypothesis
             that x is independent of y.
     """
-    kwargs['verbose'] = verbose
+    kwargs['verbose'] = False
     # If x xor y is discrete, use the continuous variable as input.
     if discrete[0] and not discrete[1]:
         x, y = y, x
@@ -121,16 +121,16 @@ def indep_nn(x, y, z=None, num_perm=10, prop_test=.1,
     # Get params for D0.
     d0_preds = []
     d0_stats = np.zeros(num_perm)
+    perm_ids = np.random.choice(np.arange(n_samples), n_samples, replace=False)
     for perm_id in range(num_perm):
-        perm_ids = np.random.choice(np.arange(n_test, n_samples),
-                                    n_samples - n_test, replace=True)
         if z is not None:
-            x_z_bootstrap = np.hstack([x[perm_ids], z[n_test:]])
+            x_noise = np.random.randn(*x.shape) * np.std(x, axis=0, keepdims=True)
+            x_z_bootstrap = np.hstack([x + x_noise, z])
         else:
             x_z_bootstrap = x[perm_ids]
         clf.restart()
-        clf.fit(x_z_bootstrap, y[n_test:], **kwargs)
-        y_pred = clf.predict(x_z[:n_test])
+        clf.fit(x_z_bootstrap[n_test:], y[n_test:], **kwargs)
+        y_pred = clf.predict(x_z_bootstrap[:n_test])
         d0_preds.append(y_pred)
         d0_stats[perm_id] = mse(y_pred, y[:n_test])
         if verbose:
@@ -148,3 +148,4 @@ def indep_nn(x, y, z=None, num_perm=10, prop_test=.1,
     else:
         # Get the p-value.
         return p_value
+
