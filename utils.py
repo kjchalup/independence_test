@@ -1,14 +1,37 @@
 """ Various utility functions. """
+import sys
 import numpy as np
 from scipy.interpolate import interp1d
 from statsmodels.distributions.empirical_distribution import ECDF as ecdf
 from scipy import integrate
 from scipy.stats import kstest
+try:
+    import rpy2.robjects as R
+except ImportError:
+    print("R-wrapper functionality will not be available. Please install rpy2.")
 
 class TimeoutException(Exception):
     """ Exception to thrown when a function times out. """
     pass
 
+
+def np2r(x):
+    """ Convert a numpy array to an R matrix.
+
+    Args:
+        x (dim0, dim1): A 2d numpy array.
+
+    Returns:
+        x_r: An rpy2 object representing an R matrix isometric to x.
+    """
+    if 'rpy2' not in sys.modules:
+        raise ImportError(("rpy2 is not installed.",
+                " Cannot convert a numpy array to an R vector."))
+    try:
+        dim0, dim1 = x.shape
+    except IndexError:
+        raise IndexError("Only 2d arrays are supported")
+    return R.r.matrix(R.FloatVector(x.flatten()), nrow=dim0, ncol=dim1)
 
 def pc_ks(pvals):
     """ Compute the area under power curve and the Kolmogorov

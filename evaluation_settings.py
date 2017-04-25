@@ -14,11 +14,11 @@ from independence_test.data import make_trivial_data
 
 SAVE_DIR = 'saved_data'
 SAMPLE_NUMS = [200, 1000]
-METHODS = {'nn': indep_nn}
-           #'rcit': indep_rcit}
-           #'chsic': indep_chsic,
-           #'kcit': indep_kcit}
-           #'kcipt': indep_kcipt}
+METHODS = {'nn': indep_nn,
+           'rcit': indep_rcit,
+           'chsic': indep_chsic,
+           'kcit': indep_kcit,
+           'kcipt': indep_kcipt}
 
 # DSETS[`name`][1] is the "complexity" parameter, 
 # DSETS[`name`][2] is the dimensionality.

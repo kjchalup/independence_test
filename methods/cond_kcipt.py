@@ -1,12 +1,24 @@
-""" Wrapper for the CHSIC conditional independence test.
+""" Wrapper for the KCIPT conditional independence test.
 You'll need Matlab and the Python-Matlab engine installed.
 Then, download this repository https://github.com/garydoranjr/kcipt
-first and set its path below. """
+first and set its path below. 
+
+Reference:
+A Permutation-Based Kernel Conditional Independence Test,
+Doran, Gary and Muandet, Krikamol and Zhang, Kun and Sch{\"o}lkopf, Bernhard,
+Proceedings of the 30th Conference on Uncertainty in Artificial Intelligence (UAI 2014).
+
+
+"""
+
 import time
-import matlab
+try:
+    import matlab
+except ImportError:
+    raise ImportError('Install the Matlab engine for Python to run CHSIC.')
 from independence_test import MATLAB_ENGINE
 
-def indep_chsic(x, y, z, max_time=60, **kwargs):
+def test(x, y, z, max_time=60, **kwargs):
     """ Run the CHSIC independence test.
 
     Args:
@@ -22,15 +34,14 @@ def indep_chsic(x, y, z, max_time=60, **kwargs):
             return -1. If Matlab fails, return -2.
     """
     try:
-        pval = MATLAB_ENGINE.hsiccondTestIC(
+        pval = MATLAB_ENGINE.kciptwrapper(
             matlab.double(x.tolist()), matlab.double(y.tolist()),
-            matlab.double(z.tolist()), 0.05, 1000.,
-            nargout=3, async=True)
+            matlab.double(z.tolist()), nargout=1, async=True)
 
         for _ in range(max_time):
             time.sleep(1)
             if pval.done():
-                return pval.result()[1]
+                return pval.result()
 
     except matlab.engine.MatlabExecutionError:
         print('Matlab failure.')
