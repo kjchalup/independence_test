@@ -19,7 +19,7 @@ from rpy2.robjects.packages import importr
 from independence_test.utils import np2r
 energy = importr('energy')
 
-def uindep_dcor(x, y, **kwargs):
+def test(x, y, **kwargs):
     """ Run the Distance Correlation independence test.
 
     Args:

@@ -10,8 +10,8 @@ try:
 except ImportError:
     print("R-wrapper functionality will not be available. Please install rpy2.")
 
-class TimeoutException(Exception):
-    """ Exception to thrown when a function times out. """
+class TimeoutError(Exception):
+    """ Exception to throw when a function times out. """
     pass
 
 
@@ -32,6 +32,7 @@ def np2r(x):
     except IndexError:
         raise IndexError("Only 2d arrays are supported")
     return R.r.matrix(R.FloatVector(x.flatten()), nrow=dim0, ncol=dim1)
+
 
 def pc_ks(pvals):
     """ Compute the area under power curve and the Kolmogorov
@@ -71,13 +72,15 @@ def sample_random_fn(xmin=0, xmax=1, npts=10, ymin=0, ymax=1):
     f = interp1d(f_base, np.random.rand(npts) * ymax + ymin, kind='linear')
     return f
 
+
 def nan_to_zero(data):
     """ Convert all nans to zeros. """
     data[np.isnan(data)] = 0.
     return data
 
+
 def equalize_dimensions(x, y, z=None):
-    """ Reduplicate the data along axis 1 to make their
+    """ Reduplicate the data along axis 1 to make the
     dimensionalities similar.
 
     Args:

@@ -1,9 +1,9 @@
 """ Constants used throughout evaluation scripts. """
-from independence_test.methods import indep_nn
-from independence_test.methods import indep_chsic
-from independence_test.methods import indep_kcit
-from independence_test.methods import indep_rcit
-from independence_test.methods import indep_kcipt
+from independence_test.methods import cond_nn
+from independence_test.methods import cond_chsic
+from independence_test.methods import cond_kcit
+from independence_test.methods import cond_rcit
+from independence_test.methods import cond_kcipt
 
 from independence_test.data import make_chaos_data
 from independence_test.data import make_pnl_data
@@ -14,11 +14,11 @@ from independence_test.data import make_trivial_data
 
 SAVE_DIR = 'saved_data'
 SAMPLE_NUMS = [200, 1000]
-METHODS = {'nn': indep_nn,
-           'rcit': indep_rcit,
-           'chsic': indep_chsic,
-           'kcit': indep_kcit,
-           'kcipt': indep_kcipt}
+METHODS = {'nn': cond_nn,
+           'rcit': cond_rcit,
+           'chsic': cond_chsic,
+           'kcit': cond_kcit,
+           'kcipt': cond_kcipt}
 
 # DSETS[`name`][1] is the "complexity" parameter, 
 # DSETS[`name`][2] is the dimensionality.

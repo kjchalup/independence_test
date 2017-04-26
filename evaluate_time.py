@@ -38,8 +38,8 @@ if __name__ == "__main__":
                         MAX_TIME = 10
                     else:
                         MAX_TIME = 30
-                    pval_d = method(xd, yd, zd, max_time=MAX_TIME)
-                    pval_i = method(xi, yi, zi, max_time=MAX_TIME)
+                    pval_d = method.test(xd, yd, zd, max_time=MAX_TIME)
+                    pval_i = method.test(xi, yi, zi, max_time=MAX_TIME)
                     toc = time.time() - tic
                     toc /= 2
                     print 'Iter {}. Time = {}s, pval_d {}, pval_i {}.'.format(
