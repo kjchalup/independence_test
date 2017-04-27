@@ -1,36 +1,15 @@
-""" Artificial datasets used in previous work and new. """
+""" Artificial datasets used in previous work and new.
+
+In each case, `strength` is a parameter that sets the difficulty
+of the task. The larger `strength`, the larger and easier to detect
+the independence between x and y given z.
+"""
 import numpy as np
-from independence_test.utils import sample_random_fn
-
-
-def make_gaussian_data(
-        n_samples=1000, type='dep', dim=1, complexity=None):
-    """ X and Y are both Gaussian. Z is another random vector,
-    independent of both X and Y. `complexity` indicates dim(Z)."""
-    assert type in ['dep', 'indep']
-    complexity = complexity or dim
-    if type == 'dep':
-        A = np.random.rand(2 * dim, 2 * dim)
-        xy = np.random.multivariate_normal(mean=np.zeros(2 * dim),
-                                           cov=np.dot(A, A.T), size=n_samples)
-        x = xy[:, :dim]
-        y = xy[:, dim:]
-    else:
-        A = np.random.rand(dim, dim)
-        B = np.random.rand(dim, dim)
-        x = np.random.multivariate_normal(mean=np.zeros(dim),
-                                          cov=np.dot(A, A.T), size=n_samples)
-        y = np.random.multivariate_normal(mean=np.zeros(dim),
-                                          cov=np.dot(B, B.T), size=n_samples)
-
-    C = np.random.rand(complexity, complexity)
-    z = np.random.multivariate_normal(
-        mean=np.zeros(complexity), cov=np.dot(C, C.T), size=n_samples)
-    return x, y, z
+from independence_test.utils import sample_gp
 
 
 def make_chaos_data(n_samples, type='dep', complexity=.5, **kwargs):
-    """ X and Y follow chaotic dynamics. Larger complexity = easier task. """
+    """ X and Y follow chaotic dynamics. """
     assert type in ['dep', 'indep']
     n_samples += 1
     x = np.zeros((n_samples, 4))
@@ -52,57 +31,24 @@ def make_chaos_data(n_samples, type='dep', complexity=.5, **kwargs):
         return x[1:], y[:-1], np.array(x[:-1, :2])
 
 
-def make_pnl_data(n_samples=1000, type='dep', complexity=1, **kwargs):
-    """ Post-nonlinear model data. Only one coordinate of z
-    is relevant. """
+def make_pnl_data(n_samples=1000, type='dep', dim=1, complexity=1, **kwargs):
+    """ Post-nonlinear model data. `dim` is the dimension of x, y and z.
+    `dim` - `complexity` indicates the number of coordinates relevant to
+    the dependence. 
+
+    Note: `complexity` must be smaller or equal to `dim`. """
+
     assert type in ['dep', 'indep']
-    e_x = np.random.randn(n_samples, 1) * .1
-    e_y = np.random.randn(n_samples, 1) * .1
-    z = np.random.rand(n_samples, complexity)
+    assert 0 <= complexity < dim
+    complexity = dim - complexity
+    e_x = np.random.randn(n_samples, dim) * .1
+    e_y = np.random.randn(n_samples, dim) * .1
+    z = np.random.rand(n_samples, dim)
+
 
     # Make ANM data.
-    fx = sample_random_fn(z.min(), z.max(), 10)
-    x = fx(z[:, :1]) + e_x
-    fy = sample_random_fn(z.min(), z.max(), 10)
-    y = fy(z[:, :1]) + e_y
-
-    # Make postnonlinear data.
-    #gx = sample_random_fn(x.min(), x.max(), 10)
-    #x = gx(x)
-    #gy = sample_random_fn(y.min(), y.max(), 10)
-    #y = gy(y)
-
-    if type == 'dep':
-        e_xy = np.random.randn(n_samples, 1) * .5
-        x += e_xy
-        y += e_xy
-
-    return x, y, z
-
-
-def make_pnl_zfull_data(n_samples=1000, complexity=100, type='dep', **kwargs):
-    """ Post-nonlinear data, all coordinates of z are relevant. """
-    assert type in ['dep', 'indep']
-    e_x = np.random.randn(n_samples, 1) * .1
-    e_y = np.random.randn(n_samples, 1) * .1
-    z = np.random.rand(n_samples, complexity)
-
-    # Make some random smooth nonlinear functions.
-    x = y = 0
-    for z_id in range(complexity):
-        fx = sample_random_fn(z.min(), z.max(), 10)
-        fy = sample_random_fn(z.min(), z.max(), 10)
-
-        # Make postnonlinear data.
-        x += fx(z[:, z_id : z_id + 1])
-        y += fx(z[:, z_id : z_id + 1])
-
-    x += e_x
-    #gx = sample_random_fn(x.min(), x.max(), 10)
-    #x = gx(x)
-    y += e_y
-    #gy = sample_random_fn(y.min(), y.max(), 10)
-    #y = gy(y)
+    x = sample_gp(z[:, :complexity], dim) + e_x
+    y = sample_gp(z[:, :complexity], dim) + e_y
 
     if type == 'dep':
         e_xy = np.random.randn(n_samples, 1) * .5
@@ -125,9 +71,11 @@ def make_discrete_data(n_samples=1000, dim=1, type='dep', complexity=20):
     y = np.vstack([np.random.multinomial(complexity, p) for p in z])[:, :-1]
     z = z[:, :-1]
     if type == 'dep':
-        return x, z, y
-    else:
-        return x, y, z
+        e_xy = np.random.randn(n_samples, dim) * x.std(axis=0, keep_dims=True)
+        x += e_xy
+        y += e_xy
+
+    return x, y, z
 
 
 def make_trivial_data(n_samples=1000, dim=1, type='dep', **kwargs):

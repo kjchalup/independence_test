@@ -4,6 +4,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from statsmodels.distributions.empirical_distribution import ECDF as ecdf
 from scipy import integrate
+from scipy.spatial.distance import pdist
 from scipy.stats import kstest
 try:
     import rpy2.robjects as R
@@ -106,3 +107,16 @@ def equalize_dimensions(x, y, z=None):
         return x_new, y_new, z_new
     else:
         return x_new, y_new
+
+
+def sample_gp(z, dim_out=1):
+    """ Sample from a Gaussian Process on the grid z. """
+    dists = pdist(z).flatten()
+    r = np.median(dists[np.where(dists != 0)[0]])
+    n_samples, dim = z.shape
+    rbf = lambda x, y: np.exp(-2 * np.sum(((x - y) * (x - y))**2) / r**2)
+    cov = np.array([[rbf(z[i], z[j]) for i in range(n_samples)]
+        for j in range(n_samples)])
+    samples = np.random.multivariate_normal(mean=np.zeros(n_samples),
+        cov=cov, size=dim_out).T
+    return samples
