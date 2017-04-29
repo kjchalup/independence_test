@@ -31,7 +31,7 @@ def make_chaos_data(n_samples, type='dep', complexity=.5, **kwargs):
         return x[1:], y[:-1], np.array(x[:-1, :2])
 
 
-def make_pnl_data(n_samples=1000, type='dep', dim=1, complexity=1, **kwargs):
+def make_pnl_data(n_samples=1000, type='dep', dim=1, complexity=0, **kwargs):
     """ Post-nonlinear model data. `dim` is the dimension of x, y and z.
     `dim` - `complexity` indicates the number of coordinates relevant to
     the dependence. 
@@ -47,11 +47,11 @@ def make_pnl_data(n_samples=1000, type='dep', dim=1, complexity=1, **kwargs):
 
 
     # Make ANM data.
-    x = sample_gp(z[:, :complexity], dim) + e_x
-    y = sample_gp(z[:, :complexity], dim) + e_y
+    x = sample_gp(z[:, :complexity], dim, lengthscale=.1) + e_x
+    y = sample_gp(z[:, :complexity], dim, lengthscale=.1) + e_y
 
     if type == 'dep':
-        e_xy = np.random.randn(n_samples, 1) * .5
+        e_xy = np.random.randn(n_samples, 1) * .1
         x += e_xy
         y += e_xy
 

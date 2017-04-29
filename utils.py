@@ -36,8 +36,8 @@ def np2r(x):
 
 
 def pc_ks(pvals):
-    """ Compute the area under power curve and the Kolmogorov
-    p-value of the hypothesis that pvals come from the uniform
+    """ Compute the area under power curve and the Kolmogorov-Smirnoff
+    test statistic of the hypothesis that pvals come from the uniform
     distribution with support (0, 1).
     """
     if pvals.size == 0:
@@ -50,7 +50,7 @@ def pc_ks(pvals):
     for (pv1, pv2) in zip(pvals[:-1], pvals[1:]):
         auc += integrate.quad(cdf, pv1, pv2)[0]
     auc += integrate.quad(cdf, pvals[-1], 1)[0]
-    _, ks = kstest(pvals, 'uniform')
+    ks, _ = kstest(pvals, 'uniform')
     return auc, ks
 
 
@@ -109,12 +109,12 @@ def equalize_dimensions(x, y, z=None):
         return x_new, y_new
 
 
-def sample_gp(z, dim_out=1):
+def sample_gp(z, dim_out=1, lengthscale=1.):
     """ Sample from a Gaussian Process on the grid z. """
     dists = pdist(z).flatten()
-    r = np.median(dists[np.where(dists != 0)[0]])
+    r = lengthscale * np.median(dists[np.where(dists != 0)[0]])
     n_samples, dim = z.shape
-    rbf = lambda x, y: np.exp(-2 * np.sum(((x - y) * (x - y))**2) / r**2)
+    rbf = lambda x, y: np.exp(-.5 * np.sum(((x - y) * (x - y))**2) / r**2)
     cov = np.array([[rbf(z[i], z[j]) for i in range(n_samples)]
         for j in range(n_samples)])
     samples = np.random.multivariate_normal(mean=np.zeros(n_samples),

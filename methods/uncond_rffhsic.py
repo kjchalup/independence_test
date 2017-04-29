@@ -11,9 +11,9 @@ Reference:
 """
 import os
 import sys
-KERPY_PATH = '~/projects/kerpy/'
+KERPY_PATH = '/home/kchalupk/projects/kerpy'
 sys.path.append(KERPY_PATH)
-sys.path.append(os.join(KERPY_PATH, 'independence_testing'))
+sys.path.append(os.path.join(KERPY_PATH, 'independence_testing'))
 import kerpy.GaussianKernel
 from HSICSpectralTestObject import HSICSpectralTestObject
 
