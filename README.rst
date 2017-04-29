@@ -7,37 +7,48 @@
 Usage
 -----
 Let *x, y, z* be random variables. Then deciding whether *P(x | y, z) = P(x | z)* 
-can be highly non-trivial, especially if the variables are discrete. This code 
-implements the Learning Conditional Independence Test (LCIT), described in 
-[link to arXiv]. Basic usage is simple:
+can be highly non-trivial, especially if the variables are continuous. This package 
+implements a simple yet efficient and effective conditional independence test,
+described in [link to arXiv]. Basic usage is simple:
 
 .. code:: python 
 
-    from independence_nn import indep_nn
+    from independence_test.methods import cond_nn
+    # Generate some data such that x is indpendent of y given z.
     n_samples = 300
     z = np.random.dirichlet(alpha=np.ones(2), size=n_samples)
     x = np.vstack([np.random.multinomial(20, p) for p in z])[:, :-1]
     y = np.vstack([np.random.multinomial(20, p) for p in z])[:, :-1]
     z = z[:, :-1]
-    pval = indep_nn(x, y, z, max_time=30, discrete=(True, False))
+    
+    # Run the conditional independence test.
+    pval = cond_nn.test(x, y, z, max_time=30, discrete=(True, False))
 
 Here, we created discrete variables *x* and *y*, d-separated by a "common cause"
 *z*. The null hypothesis is that *x* is independent of *y* given *z*. Since in this 
-case the variables are independent given *z*, pval should be small. Specifying which 
+case the variables are independent given *z*, pval shouldn't be too small. Specifying which 
 variables are discrete is optional.
 
-There are many more examples in `example_[abc].py` scripts.
+Implemented Methods
+-------------------
+I have implemented (wrappers for) many related methods for conditional and
+unconditional independence tests. You can find references to relevant research
+in the appropriate module docstrings.
+independence_test.methods.cond_nn
 
-Installation
+Requirements
 ------------
-Simply clone this repository -- all the important code is in the
-`independence_nn.py`_, `nn.py`_ and `utils.py`_ files, so put the repository
-in your path and import indep_nn from independence_nn.
-  
-Requirements (all installable through `pip`_):
+To use the nn methods:
     * numpy >= 1.12
     * scikit-learn >= 0.18.1
     * tensorflow >= 1.0.0
+To use Matlab wrappers (CHSIC, KCIT, KCIPT):
+    * Matlab 2014a (might work with other versions, not tested)
+    * matlab engine for Python (available with Matlab)
+    * The KCIPT package for Matlab (https://github.com/garydoranjr/kcipt/)
+To use R wrappers (RCIT, RIT):
+    * R 3.4 (might work with other versions, not tested)
+    * The RCIT package for R (https://github.com/ericstrobl/RCIT)
 
 .. _pip: http://www.pip-installer.org/en/latest/
 .. _independence_nn.py: independence_nn.py
