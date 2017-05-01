@@ -5,7 +5,7 @@ of the task. The larger `strength`, the larger and easier to detect
 the independence between x and y given z.
 """
 import numpy as np
-from independence_test.utils import sample_gp
+from independence_test.utils import sample_gp, sample_pnl
 
 
 def make_chaos_data(n_samples, type='dep', complexity=.5, **kwargs):
@@ -41,24 +41,24 @@ def make_pnl_data(n_samples=1000, type='dep', dim=1, complexity=0, **kwargs):
     assert type in ['dep', 'indep']
     assert 0 <= complexity < dim
     complexity = dim - complexity
-    e_x = np.random.randn(n_samples, dim) * .1
-    e_y = np.random.randn(n_samples, dim) * .1
+    e_x = np.random.randn(n_samples, dim)
+    e_y = np.random.randn(n_samples, dim)
     z = np.random.rand(n_samples, dim)
 
 
     # Make ANM data.
-    x = sample_gp(z[:, :complexity], dim, lengthscale=.1) + e_x
-    y = sample_gp(z[:, :complexity], dim, lengthscale=.1) + e_y
+    x = sample_pnl(z[:, :complexity] + e_x, dim)
+    y = sample_pnl(z[:, :complexity] + e_y, dim)
 
     if type == 'dep':
-        e_xy = np.random.randn(n_samples, 1) * .1
+        e_xy = np.random.randn(n_samples, 1) * .5
         x += e_xy
         y += e_xy
 
     return x, y, z
 
 
-def make_discrete_data(n_samples=1000, dim=1, type='dep', complexity=20):
+def make_discrete_data(n_samples=1000, dim=1, type='dep', complexity=20, **kwargs):
     """ Each row of Z is a (continuous) vector sampled
     from the uniform Dirichlet distribution. Each row of
     X and Y is a (discrete) sample from a multinomial
@@ -67,11 +67,11 @@ def make_discrete_data(n_samples=1000, dim=1, type='dep', complexity=20):
     """
     assert type in ['dep', 'indep']
     z = np.random.dirichlet(alpha=np.ones(dim+1), size=n_samples)
-    x = np.vstack([np.random.multinomial(complexity, p) for p in z])[:, :-1]
-    y = np.vstack([np.random.multinomial(complexity, p) for p in z])[:, :-1]
+    x = np.vstack([np.random.multinomial(complexity, p) for p in z])[:, :-1].astype(float)
+    y = np.vstack([np.random.multinomial(complexity, p) for p in z])[:, :-1].astype(float)
     z = z[:, :-1]
     if type == 'dep':
-        e_xy = np.random.randn(n_samples, dim) * x.std(axis=0, keep_dims=True)
+        e_xy = np.random.randn(n_samples, dim) * np.std(x, axis=0, keepdims=True)
         x += e_xy
         y += e_xy
 

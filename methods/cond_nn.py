@@ -8,6 +8,7 @@ Chalupka, Krzysztof and Perona, Pietro and Eberhardt, Frederick, 2017.
 import sys
 import time
 import numpy as np
+from scipy.stats import ttest_ind
 from independence_test.methods import nn
 from independence_test.utils import equalize_dimensions
 
@@ -99,7 +100,7 @@ def test(x, y, z=None, num_perm=10, prop_test=.1,
     # Create a neural net that predicts y from x and z.
     clf = nn.NN(x_dim=x_z.shape[1],
                 y_dim=y.shape[1], **kwargs)
-    kwargs['num_epochs'] = 10000  # Use max_time so this can be large.
+    kwargs['max_epochs'] = 10000  # Use max_time so this can be large.
 
     # Get params for D1.
     d1_preds = []
@@ -109,7 +110,7 @@ def test(x, y, z=None, num_perm=10, prop_test=.1,
     y_pred = clf.predict(x_z[:n_test])
     d1_preds.append(y_pred)
     num_epochs = (tr_losses != 0).sum()
-    kwargs['num_epochs'] = num_epochs
+    kwargs['max_epochs'] = num_epochs
     stat = mse(y_pred, y[:n_test])
     d1_stats[0] = stat
     if verbose:
@@ -129,16 +130,17 @@ def test(x, y, z=None, num_perm=10, prop_test=.1,
     # Get params for D0.
     if z is not None:
         clf.close()
-        clf = nn.NN(x_dim=z.shape[1],
+        clf = nn.NN(x_dim=z.shape[1] + x.shape[1],
                     y_dim=y.shape[1], **kwargs)
     d0_preds = []
     d0_stats = np.zeros(num_perm)
     for perm_id in range(num_perm):
-        #x_noise = np.random.randn(*x.shape) * np.std(x, axis=0, keepdims=True) * .5
-        perm_ids = np.random.choice(np.arange(n_samples), n_samples, replace=False)
+        perm_ids = np.random.permutation(n_samples)
+        x_noise = np.random.randn(*x.shape) * np.std(x, axis=0, keepdims=True)
         if z is not None:
-             #x_z_bootstrap = np.hstack([x + x_noise, z])
-            x_z_bootstrap = z#np.hstack([x[perm_ids], z])
+            #x_z_bootstrap = np.hstack([x + x_noise, z])
+            #x_z_bootstrap = z
+            x_z_bootstrap = np.hstack([x[perm_ids], z])
         else:
             x_z_bootstrap = x + x_noise
         clf.restart()
@@ -150,6 +152,7 @@ def test(x, y, z=None, num_perm=10, prop_test=.1,
             print('D0 statistic, permutation {}: {}'.format(
                 perm_id, d0_stats[perm_id]))
 
+    #p_value = ttest_ind(d0_stats, d1_stats)
     # Bootstrap the difference in means of the two distributions.
     t_obs = fs[test_type](d0_stats, d1_stats)
     t_star = bootstrap(d0_stats, d1_stats, f=fs[test_type])
@@ -160,4 +163,5 @@ def test(x, y, z=None, num_perm=10, prop_test=.1,
                 d1_stats, d0_stats, t_obs, t_star, n_test)
     else:
         # Get the p-value.
+        #return ttest_ind(d0_stats, d1_stats, equal_var=False)[1]
         return p_value

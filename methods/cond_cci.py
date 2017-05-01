@@ -49,19 +49,19 @@ def residuals(x, z=None):
 
 
 def fdr(plist, alpha):
-    m = float(len(plist))
+    m = len(plist)
     plist = sorted(plist)
     for k in range(0, m):
-        if (k+1) / m * alpha >= plist[k]:
+        if (k+1) / float(m) * alpha >= plist[k]:
             return k
 
 
-def test(x, y, z, alpha=.05, n_basis=8):
+def test(x, y, z, alpha=.05, n_basis=8, **kwargs):
     rx = residuals(x, z)
     ry = residuals(x, y)
     plist = []
     for basis_i in range(n_basis):
-        for basis_y in range(n_basis):
+        for basis_j in range(n_basis):
             fx = basis_fns(basis_i)(x)
             fy = basis_fns(basis_j)(y)
             cov = np.mean((fx - fx.mean()) * (fy - fy.mean()))
@@ -69,10 +69,7 @@ def test(x, y, z, alpha=.05, n_basis=8):
             z = .5 * np.log((1 + r) / (1 - r))
             x_prim = (fx - fx.mean()) / np.std(fx)
             y_prim = (fy - fy.mean()) / np.std(fy)
-            tau = np.mean(x_prim**2 * y_prim**2)
-            plist.append(2 * (1 - np.abs(norm.cdf(tau) * np.sqrt(n_samples) * z)))
+            tau2 = np.mean(x_prim**2 * y_prim**2)
+            plist.append(2 * (1-norm.cdf(np.abs(np.sqrt(x.shape[0]) * z), 0, tau2)))
     cutoff = fdr(plist, alpha)
-    if cutoff >= len(plist):
-        return 1
-    else:
-        return 0
+    return 1 - int(cutoff == 0)

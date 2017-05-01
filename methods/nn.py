@@ -1,4 +1,6 @@
 """ Neural network routines. """
+import sys
+import time
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.exceptions import NotFittedError
@@ -139,17 +141,19 @@ class NN(object):
         y_pred = self.sess.run(self.y_pred, {self.x_tf: x, self.keep_prob: 1.})
         return self.scaler_y.inverse_transform(y_pred)
 
-    def fit(self, x, y, num_epochs=10, batch_size=32,
+    def fit(self, x, y, max_epochs=1000, min_epochs=10, batch_size=32,
             lr=1e-3, max_time=np.inf, verbose=False,
-            max_nonimprovs=10, **kwargs):
+            max_nonimprovs=15, **kwargs):
         """ Train the MDN to maximize the data likelihood.
 
         Args:
             x (n_samples, x_dim): Input data.
             y (n_samples, y_dim): Output data.
-            num_epochs (int): Number of training epochs. Each epoch goes through
-                the whole dataset (possibly leaving out
+            max_epochs (int): Max number of training epochs. Each epoch goes
+                through the whole dataset (possibly leaving out
                 mod(x.shape[0], batch_size) data).
+            min_epochs (int): Do at least this many epochs (even if max_time
+                already passed).
             batch_size (int): Training batch size.
             lr (float): Learning rate.
             max_time (float): Maximum training time, in seconds. Training will
@@ -177,12 +181,12 @@ class NN(object):
         y_val = self.scaler_y.transform(y_val)
 
         # Train the neural net.
-        tr_losses = np.zeros(num_epochs)
-        val_losses = np.zeros(num_epochs)
+        tr_losses = np.zeros(max_epochs)
+        val_losses = np.zeros(max_epochs)
         best_val = np.inf
         batch_num = int(np.floor((n_samples - n_val) / float(batch_size)))
         start_time = time.time()
-        for epoch_id in range(num_epochs):
+        for epoch_id in range(max_epochs):
             ids_perm = np.random.permutation(n_samples - n_val)
             tr_loss = 0
             for batch_id in range(batch_num):
@@ -217,8 +221,13 @@ class NN(object):
                               ).format(epoch_id, int(tr_time),
                                        tr_loss, val_loss, best_val))
                 sys.stdout.flush()
-
-            if tr_time > max_time or epoch_id - last_improved > max_nonimprovs:
+            # Finish training if:
+            #   1) min_epochs are done, and
+            #   2a) either we're out of time, or
+            #   2b) there was no validation score
+            #       improvement for max_nonimprovs epochs.
+            if (epoch_id >= min_epochs and (time.time() - start_time > max_time
+                or epoch_id - last_improved > max_nonimprovs)):
                 break
 
         self.saver.restore(self.sess, model_path)

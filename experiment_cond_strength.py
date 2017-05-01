@@ -18,8 +18,8 @@ if __name__ == "__main__":
     dset = sys.argv[1]
     dataset = DSETS[dset]
 
-    #SAVE_FNAME = '{}_results.pkl'.format(dset)
-    SAVE_FNAME = 'tmp'
+    SAVE_FNAME = '{}_results.pkl'.format(dset)
+    #SAVE_FNAME = 'tmp_'
 
     try:
         RESULTS = joblib.load(SAVE_FNAME)
