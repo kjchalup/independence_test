@@ -163,5 +163,5 @@ def test(x, y, z=None, num_perm=10, prop_test=.1,
                 d1_stats, d0_stats, t_obs, t_star, n_test)
     else:
         # Get the p-value.
-        #return ttest_ind(d0_stats, d1_stats, equal_var=False)[1]
-        return p_value
+        return ttest_ind(d0_stats, d1_stats, equal_var=False)[1]
+        #return p_value

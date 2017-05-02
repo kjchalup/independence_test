@@ -7,6 +7,29 @@ the independence between x and y given z.
 import numpy as np
 from independence_test.utils import sample_gp, sample_pnl
 
+def _sample_gmm(means, stds, coeffs, n_samples):
+    """ Sample from a mixture of Gaussians. """
+    mixs = np.random.choice(coeffs.size, n_samples, p=coeffs, replace=True)
+    return np.random.randn(n_samples) * stds[mixs] + means[mixs] 
+
+
+def make_gmm_data(n_samples, type='dep', dim=10, complexity=10, **kwargs):
+    """ Z are the means, stds and coefficients of k one-dimensional Gaussian
+    mixture components. X and Y are samples from the mixture. """
+    x = np.zeros((n_samples, dim))
+    y = np.zeros((n_samples, dim))
+    z = np.zeros((n_samples, complexity * 3))
+    coeffs = np.random.rand(n_samples, complexity)
+    coeffs /= coeffs.sum(axis=1, keepdims=True)
+    means = np.random.rand(n_samples, complexity)
+    stds = np.random.randn(n_samples, complexity) * .5
+    z = np.hstack([coeffs, means, stds])
+    x = np.vstack([_sample_gmm(means[i], stds[i], coeffs[i], dim) for i in range(n_samples)])
+    y = np.vstack([_sample_gmm(means[i], stds[i], coeffs[i], dim) for i in range(n_samples)])
+    if type == 'dep':
+        x, y, z = x, z, y
+    return x, y, z
+
 
 def make_chaos_data(n_samples, type='dep', complexity=.5, **kwargs):
     """ X and Y follow chaotic dynamics. """
@@ -49,8 +72,9 @@ def make_pnl_data(n_samples=1000, type='dep', dim=1, complexity=0, **kwargs):
     # Make ANM data.
     x = sample_pnl(z[:, :complexity] + e_x, dim)
     y = sample_pnl(z[:, :complexity] + e_y, dim)
-
+    
     if type == 'dep':
+        #x, y, z = x, z, y
         e_xy = np.random.randn(n_samples, 1) * .5
         x += e_xy
         y += e_xy
@@ -71,10 +95,7 @@ def make_discrete_data(n_samples=1000, dim=1, type='dep', complexity=20, **kwarg
     y = np.vstack([np.random.multinomial(complexity, p) for p in z])[:, :-1].astype(float)
     z = z[:, :-1]
     if type == 'dep':
-        e_xy = np.random.randn(n_samples, dim) * np.std(x, axis=0, keepdims=True)
-        x += e_xy
-        y += e_xy
-
+        x, y, z = x, z, y
     return x, y, z
 
 
