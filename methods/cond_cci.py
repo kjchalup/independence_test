@@ -5,6 +5,7 @@ Ramsey, Joseph D.,
 A Scalable Conditional Independence Test for Nonlinear, Non-Gaussian Data,
 arXiv:1401.5031v2, 2014.
 """
+import time
 import numpy as np
 from scipy.stats import norm
 
@@ -28,14 +29,17 @@ def uniform_kernel(d, l):
     return 1 if d < l else 0
 
 
-def residuals(x, z=None):
+def residuals(x, z=None, max_time=np.inf):
     """ Return the residuals of x given z. See Ramsey, 2014 for details."""
     if z is None:
         return x
     n_samples = x.shape[0]
     residuals = np.zeros_like(x)
     lengthscale = mad(z)
+    tic = time.time()
     for i in range(n_samples):
+        if time.time() - tic > max_time:
+            return None, None
         sum = 0
         weight = 0
         for j in range(n_samples):
@@ -45,7 +49,7 @@ def residuals(x, z=None):
             sum += k * x[j]
             weight += k
         residuals[i] = x[i] - sum / weight
-    return residuals 
+    return residuals, max_time - (time.time() - tic)
 
 
 def fdr(plist, alpha):
@@ -57,11 +61,20 @@ def fdr(plist, alpha):
 
 
 def test(x, y, z, alpha=.05, n_basis=8, **kwargs):
-    rx = residuals(x, z)
-    ry = residuals(x, y)
+    if 'max_time' in kwargs.keys():
+        max_time = kwargs['max_time']
+    else:
+        max_time = np.inf
+    rx, max_time = residuals(x, z, max_time)
+    if rx is None: return -1
+    ry, max_time = residuals(x, y, max_time)
+    if ry is None: return -1
     plist = []
+    tic = time.time()
     for basis_i in range(n_basis):
         for basis_j in range(n_basis):
+            if time.time() - tic > max_time:
+                return -1 # Out of time.
             fx = basis_fns(basis_i)(x)
             fy = basis_fns(basis_j)(y)
             cov = np.mean((fx - fx.mean()) * (fy - fy.mean()))

@@ -184,14 +184,18 @@ class NN(object):
         tr_losses = np.zeros(max_epochs)
         val_losses = np.zeros(max_epochs)
         best_val = np.inf
-        batch_num = int(np.floor((n_samples - n_val) / float(batch_size)))
+        #batch_num = int(np.floor((n_samples - n_val) / float(batch_size)))
+        batch_num = int(np.floor(1000 / float(batch_size)))
+        if batch_num == 0:
+            raise ValueError('Please choose batch_size < 1000!')
         start_time = time.time()
         for epoch_id in range(max_epochs):
-            ids_perm = np.random.permutation(n_samples - n_val)
+            #ids_perm = np.random.permutation(n_samples - n_val)
             tr_loss = 0
             for batch_id in range(batch_num):
-                batch_ids = ids_perm[batch_id * batch_size:
-                                     (batch_id + 1) * batch_size]
+                #batch_ids = ids_perm[batch_id * batch_size:
+                #                     (batch_id + 1) * batch_size]
+                batch_ids = np.random.choice(n_samples-n_val, batch_size, replace=False)
                 tr_loss += self.sess.run(
                     self.loss_tf, {self.x_tf: x_tr[batch_ids],
                                    self.y_tf: y_tr[batch_ids],

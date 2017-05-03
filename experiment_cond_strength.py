@@ -11,7 +11,7 @@ from collections import defaultdict
 import joblib
 import numpy as np
 from independence_test.experiment_settings import SAVE_DIR, SAMPLE_NUMS, COND_METHODS, DSETS
-MAX_TIME = 30
+MAX_TIME = 600
 N_TRIALS = 10
 
 if __name__ == "__main__":
@@ -48,10 +48,10 @@ if __name__ == "__main__":
 
                         # Run the trials.
                         tic = time.time()
-                        if method_name == 'nn':
-                            MAX_TIME = 30
-                        else:
-                            MAX_TIME = 200
+                        #if method_name == 'nn':
+                        #    MAX_TIME = 30
+                        #else:
+                        #    MAX_TIME = 200
                         pval_d = method.test(xd, yd, zd, max_time=MAX_TIME)
                         pval_i = method.test(xi, yi, zi, max_time=MAX_TIME)
                         toc = time.time() - tic

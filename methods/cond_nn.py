@@ -136,7 +136,7 @@ def test(x, y, z=None, num_perm=10, prop_test=.1,
     d0_stats = np.zeros(num_perm)
     for perm_id in range(num_perm):
         perm_ids = np.random.permutation(n_samples)
-        x_noise = np.random.randn(*x.shape) * np.std(x, axis=0, keepdims=True)
+        #x_noise = np.random.randn(*x.shape) * np.std(x, axis=0, keepdims=True)
         if z is not None:
             #x_z_bootstrap = np.hstack([x + x_noise, z])
             #x_z_bootstrap = z
