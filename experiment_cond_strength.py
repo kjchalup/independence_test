@@ -10,15 +10,55 @@ import time
 from collections import defaultdict
 import joblib
 import numpy as np
-from independence_test.experiment_settings import SAVE_DIR, SAMPLE_NUMS, COND_METHODS, DSETS
+
+# Import all the conditional independence methods we have implemented.
+from independence_test.methods import cond_nn
+from independence_test.methods import cond_cci
+from independence_test.methods import cond_hsic
+from independence_test.methods import cond_kcit
+from independence_test.methods import cond_rcit
+from independence_test.methods import cond_kcipt
+
+# Import all the datasets we have implemented
+from independence_test.data import make_chaos_data
+from independence_test.data import make_pnl_data
+from independence_test.data import make_gmm_data
+from independence_test.data import make_discrete_data
+
+# Choose the sample numbers we will iterate over.
+SAMPLE_NUMS = [200, 400, 1000, 10000, 100000]
+
+# Set a limit (in seconds) on each trial. Methods that go over
+# will be forcefully terminated and will return -1 as p-value.
 MAX_TIME = 600
+
+# Number of experimental trials, for each method / dataset setting.
 N_TRIALS = 10
+
+# Make a dict of methods.
+COND_METHODS = {'cci': cond_cci,
+                'nn': cond_nn,
+                'rcit': cond_rcit,
+                'chsic': cond_hsic,
+                'kcit': cond_kcit,
+                'kcipt': cond_kcipt}
+
+# Make a dict of the datasets, as well as the values of the dataset 
+# 'complexity' parameter we want to consider, and the dataset dimen-
+# sionalities we want to consider (see documentation for each data-
+# set for permissible complexity and dimensionality values).
+DSETS = {'chaos': (make_chaos_data, [.01, .04, .16, .32, .68, .84, .96, .99], [1]),
+         'pnl': (make_pnl_data, [0], [1]),
+         'discrete': (make_discrete_data, [3], [100]),
+         'gmm': (make_gmm_data, [1], [100])}
+
+
 
 if __name__ == "__main__":
     dset = sys.argv[1]
     dataset = DSETS[dset]
 
-    SAVE_FNAME = '{}_results.pkl'.format(dset)
+    SAVE_FNAME = os.path.join('saved_data', '{}_results.pkl'.format(dset))
 
     try:
         RESULTS = joblib.load(SAVE_FNAME)
@@ -35,11 +75,9 @@ if __name__ == "__main__":
                     xi, yi, zi = dataset[0](type='indep', n_samples=n_samples,
                                             dim=dim, complexity=param, verbose=True)
                     for method_name in COND_METHODS:
-                        # Set up the storage.
                         key = '{}_{}_{}mt_{}samples_{}dim_{}complexity'.format(
                             method_name, dset, MAX_TIME, n_samples, dim, param)
                         if len(RESULTS[key]) > 0 and RESULTS[key][-1][0] < 0:
-                            # Once out of time, always out of time.
                             continue
                         method = COND_METHODS[method_name]
                         print '=' * 70
@@ -48,10 +86,6 @@ if __name__ == "__main__":
 
                         # Run the trials.
                         tic = time.time()
-                        #if method_name == 'nn':
-                        #    MAX_TIME = 30
-                        #else:
-                        #    MAX_TIME = 200
                         pval_d = method.test(xd, yd, zd, max_time=MAX_TIME)
                         pval_i = method.test(xi, yi, zi, max_time=MAX_TIME)
                         toc = time.time() - tic
