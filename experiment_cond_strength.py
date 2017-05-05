@@ -36,8 +36,8 @@ MAX_TIME = 600
 N_TRIALS = 10
 
 # Make a dict of methods.
-COND_METHODS = {'cci': cond_cci,
-                'nn': cond_nn,
+COND_METHODS = {'nn': cond_nn,
+                'cci': cond_cci,
                 'rcit': cond_rcit,
                 'chsic': cond_hsic,
                 'kcit': cond_kcit,
@@ -49,7 +49,7 @@ COND_METHODS = {'cci': cond_cci,
 # set for permissible complexity and dimensionality values).
 DSETS = {'chaos': (make_chaos_data, [.01, .04, .16, .32, .68, .84, .96, .99], [1]),
          'pnl': (make_pnl_data, [0], [1]),
-         'discrete': (make_discrete_data, [3], [100]),
+         'discrete': (make_discrete_data, [2, 8, 32], [2, 8, 32]),
          'gmm': (make_gmm_data, [1], [100])}
 
 
@@ -87,6 +87,7 @@ if __name__ == "__main__":
                         # Run the trials.
                         tic = time.time()
                         pval_d = method.test(xd, yd, zd, max_time=MAX_TIME)
+                        #pval_d = 0
                         pval_i = method.test(xi, yi, zi, max_time=MAX_TIME)
                         toc = time.time() - tic
                         print('(trial {}, time {}) p_d {:.4g}, p_i {:.4g}.'.format(
@@ -95,5 +96,5 @@ if __name__ == "__main__":
                         # Pickle the results.
                         RESULTS[key].append((pval_d, pval_i, toc))
                         joblib.dump(RESULTS, os.path.join(
-                            'independence_test', SAVE_DIR, SAVE_FNAME))
+                            'independence_test', SAVE_FNAME))
                 print RESULTS

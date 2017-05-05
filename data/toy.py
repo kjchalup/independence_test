@@ -5,6 +5,7 @@ of the task. The larger `strength`, the larger and easier to detect
 the independence between x and y given z.
 """
 import numpy as np
+from sklearn.preprocessing import OneHotEncoder
 from independence_test.utils import sample_pnl
 
 def _sample_gmm(means, stds, coeffs, n_samples):
@@ -92,12 +93,14 @@ def make_discrete_data(n_samples=1000, dim=1, type='dep', complexity=20, **kwarg
     assert type in ['dep', 'indep']
     z = np.random.dirichlet(alpha=np.ones(dim+1), size=n_samples)
     x = np.vstack([np.random.multinomial(complexity, p) for p in z])[:, :-1].astype(float)
-    x = OneHotEncoder(sparse=False, n_values=x.max()).fit_transform(x)
     y = np.vstack([np.random.multinomial(complexity, p) for p in z])[:, :-1].astype(float)
-    y = OneHotEncoder(sparse=False, n_values=y.max()).fit_transform(y)
-    z = z[:, :-1]
     if type == 'dep':
-        x, y, z = x, z, y
+        v = np.vstack([np.random.multinomial(complexity, p) for p in z])[:, :-1].astype(float)
+        x += v
+        y += v
+    z = z[:, :-1]
+    x = OneHotEncoder(sparse=False).fit_transform(x)
+    y = OneHotEncoder(sparse=False).fit_transform(y)
     return x, y, z
 
 

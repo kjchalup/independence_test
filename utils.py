@@ -50,7 +50,7 @@ def pc_ks(pvals):
     for (pv1, pv2) in zip(pvals[:-1], pvals[1:]):
         auc += integrate.quad(cdf, pv1, pv2)[0]
     auc += integrate.quad(cdf, pvals[-1], 1)[0]
-    ks, _ = kstest(pvals, 'uniform')
+    _, ks = kstest(pvals, 'uniform')
     return auc, ks
 
 
