@@ -64,7 +64,8 @@ class NN(object):
             of units in the MDN's hidden layer.
     """
 
-    def __init__(self, x_dim, y_dim, arch=[128, 128], **kwargs):
+    #def __init__(self, x_dim, y_dim, arch=[128, 128], **kwargs):
+    def __init__(self, x_dim, y_dim, arch=[1024], **kwargs):
         self.arch = arch
         self.x_tf = tf.placeholder(
             tf.float32, [None, x_dim], name='input_data')
@@ -74,14 +75,18 @@ class NN(object):
         self.y_dim = y_dim
 
         # Initialize the weights.
-        self.Ws = [tf.truncated_normal([
-            x_dim, arch[0]], stddev=1. / x_dim, dtype=tf.float32)]
-        for layer_id in range(len(arch)-1):
+        if len(arch) > 0:
+            self.Ws = [tf.truncated_normal([
+                x_dim, self.arch[0]], stddev=1. / x_dim, dtype=tf.float32)]
+            for layer_id in range(len(arch)-1):
+                self.Ws.append(tf.truncated_normal(
+                    [arch[layer_id - 1], arch[layer_id]],
+                    stddev=1. / arch[layer_id - 1], dtype=tf.float32))
             self.Ws.append(tf.truncated_normal(
-                [arch[layer_id - 1], arch[layer_id]],
-                stddev=1. / arch[layer_id - 1], dtype=tf.float32))
-        self.Ws.append(tf.truncated_normal(
-            [arch[-1], self.y_dim], stddev=1. / arch[-1], dtype=tf.float32))
+                [arch[-1], self.y_dim], stddev=1. / arch[-1], dtype=tf.float32))
+        else:
+            self.Ws = [tf.truncated_normal([x_dim, self.y_dim],
+                stddev=1. / x_dim, dtype=tf.float32)]
         self.Ws = [tf.Variable(W_init) for W_init in self.Ws]
 
         # Initialize the biases.
@@ -142,8 +147,8 @@ class NN(object):
         return self.scaler_y.inverse_transform(y_pred)
 
     def fit(self, x, y, max_epochs=1000, min_epochs=10, batch_size=32,
-            lr=1e-3, max_time=np.inf, verbose=False,
-            max_nonimprovs=15, **kwargs):
+            lr=1e-3, max_time=np.inf, nn_verbose=False,
+            max_nonimprovs=30, **kwargs):
         """ Train the MDN to maximize the data likelihood.
 
         Args:
@@ -158,7 +163,7 @@ class NN(object):
             lr (float): Learning rate.
             max_time (float): Maximum training time, in seconds. Training will
                 stop if max_time is up OR num_epochs is reached.
-            verbose (bool): Display training progress messages (or not).
+            nn_verbose (bool): Display training progress messages (or not).
             max_nonimprovs (int): Number of epochs allowed without improving
                 the validation score before quitting.
 
@@ -185,9 +190,7 @@ class NN(object):
         val_losses = np.zeros(max_epochs)
         best_val = np.inf
         #batch_num = int(np.floor((n_samples - n_val) / float(batch_size)))
-        batch_num = int(np.floor(1000 / float(batch_size)))
-        if batch_num == 0:
-            raise ValueError('Please choose batch_size < 1000!')
+        batch_num = 1
         start_time = time.time()
         for epoch_id in range(max_epochs):
             #ids_perm = np.random.permutation(n_samples - n_val)
@@ -219,7 +222,7 @@ class NN(object):
                     self.sess, './tmp')
 
             tr_time = time.time() - start_time
-            if verbose:
+            if nn_verbose:
                 sys.stdout.write(('\rTraining epoch {}, time {}s. Tr loss '
                                   '{:.4g}, val loss {:.4g}, best val {:.4g}.'
                               ).format(epoch_id, int(tr_time),
@@ -235,7 +238,7 @@ class NN(object):
                 break
 
         self.saver.restore(self.sess, model_path)
-        if verbose:
+        if nn_verbose:
             print('Trainig done in {} epochs, {}s. Validation loss {:.4g}.'.format(
                 epoch_id, tr_time, best_val))
         return tr_losses, val_losses

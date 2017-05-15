@@ -6,7 +6,7 @@ the independence between x and y given z.
 """
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
-from independence_test.utils import sample_pnl
+from independence_test.utils import sample_pnl, sample_gp
 
 def _sample_gmm(means, stds, coeffs, n_samples):
     """ Sample from a mixture of Gaussians. """
@@ -29,6 +29,12 @@ def make_gmm_data(n_samples, type='dep', dim=10, complexity=10, **kwargs):
     y = np.vstack([_sample_gmm(means[i], stds[i], coeffs[i], dim) for i in range(n_samples)])
     if type == 'dep':
         x, y, z = x, z, y
+        #v = np.vstack([_sample_gmm(means[i], stds[i], coeffs[i], dim) for i in range(n_samples)])
+        #mixin_ids = np.random.choice(dim, int(dim/2))
+        #x[mixin_ids] = v[:int(dim/2)]
+        #mixin_ids = np.random.choice(dim, int(dim/2))
+        #y[mixin_ids] = v[:int(dim/2)]
+
     return x, y, z
 
 
@@ -71,7 +77,9 @@ def make_pnl_data(n_samples=1000, type='dep', dim=1, complexity=0, **kwargs):
 
 
     # Make ANM data.
+    #x = sample_gp(sample_gp(z[:, :complexity]) + e_x)
     x = sample_pnl(z[:, :complexity] + e_x, dim)
+    #y = sample_gp(sample_gp(z[:, :complexity]) + e_y)
     y = sample_pnl(z[:, :complexity] + e_y, dim)
     
     if type == 'dep':
@@ -103,6 +111,22 @@ def make_discrete_data(n_samples=1000, dim=1, type='dep', complexity=20, **kwarg
     y = OneHotEncoder(sparse=False).fit_transform(y)
     return x, y, z
 
+
+def make_linear_data(n_samples=1000, type='dep', complexity=.01, **kwargs):
+    """ Sample from a linear model where either Z
+    is a cause of X and Y ('independent case') or
+    Y is a cause of both X and Z.
+    gamma is the 
+    """
+    z = np.random.uniform(0, 1, n_samples).reshape(n_samples, 1)
+    a = np.abs(np.random.randn() * complexity + complexity)
+    b = np.abs(np.random.randn() * complexity + complexity)
+    x = a * z + np.random.randn(n_samples, 1) * .01
+    y = b * z + np.random.randn(n_samples, 1) * .01
+    if type == 'dep':
+        return x, z, y
+    else:
+        return x, y, z
 
 def make_trivial_data(n_samples=1000, dim=1, type='dep', **kwargs):
     """ Make x = y if type = 'dep', else make x and y uniform random. """

@@ -13,8 +13,10 @@ from independence_test.methods import nn
 from independence_test.utils import equalize_dimensions
 
 # Define available test statistic functions.
-fs = {'min': lambda x, y: np.min(x) - np.min(y), 
+FS = {'min': lambda x, y: np.min(x) - np.min(y), 
       'mean': lambda x, y: np.mean(x) - np.mean(y)}
+ARCHES = [[64], [128], [256], [512], [1024],
+          [64, 64], [128, 128], [256, 256], [512, 512], [1024, 1024]]
 
 def mse(y_pred, y):
     """ Compute the mean squared error.
@@ -84,92 +86,52 @@ def test(x, y, z=None, num_perm=10, prop_test=.1,
 
     # Adjust the dimensionalities of x, y, z to be on the same
     # order, by simple data duplication.
-    if z is not None:
-        x, y, z = equalize_dimensions(x, y, z)
-    else:
-        x, y = equalize_dimensions(x, y)
+    x, y, z = equalize_dimensions(x, y, z)
 
     # Use this many datapoints as a test set.
     n_samples = x.shape[0]
     n_test = int(n_samples * prop_test)
 
     # Attach the conditioning variable to the input.
-    if z is not None:
-        x_z = np.hstack([x, z])
-    else:
-        x_z = x
+    x_z = np.hstack([x, z])
 
-    # Create a neural net that predicts y from x and z.
-    clf = nn.NN(x_dim=x_z.shape[1],
-                y_dim=y.shape[1], **kwargs)
-    kwargs['max_epochs'] = 10000  # Use max_time so this can be large.
-
-    # Get params for D1.
+    # Set up storage.
     d1_preds = []
     d1_stats = np.zeros(num_perm)
-    tr_losses, _ = clf.fit(x_z[n_test:], y[n_test:],
-                           max_time=max_time / float(num_perm * 2), **kwargs)
-    y_pred = clf.predict(x_z[:n_test])
-    d1_preds.append(y_pred)
-    num_epochs = (tr_losses != 0).sum()
-    kwargs['max_epochs'] = num_epochs
-    stat = mse(y_pred, y[:n_test])
-    d1_stats[0] = stat
-    if verbose:
-        print('D1 statistic, permutation {}: {}'.format(
-            0, d1_stats[0]))
+    d0_preds = []
+    d0_stats = np.zeros(num_perm)
 
-    for perm_id in range(1, num_perm):
-        clf.restart()
+    for perm_id in range(num_perm):
+        # Train on the original data.
+        clf = nn.NN(x_dim=x_z.shape[1],
+                    y_dim=y.shape[1], arch=ARCHES[perm_id], **kwargs)
         clf.fit(x_z[n_test:], y[n_test:], **kwargs)
         y_pred = clf.predict(x_z[:n_test])
         d1_preds.append(y_pred)
         d1_stats[perm_id] = mse(y_pred, y[:n_test])
-        if verbose:
-            print('D1 statistic, permutation {}: {}'.format(
-                perm_id, d1_stats[perm_id]))
 
-    # Get params for D0.
-    if z is not None:
-        clf.close()
-        clf = nn.NN(x_dim=z.shape[1] + x.shape[1],
-        #clf = nn.NN(x_dim=z.shape[1],
-                    y_dim=y.shape[1], **kwargs)
-    d0_preds = []
-    d0_stats = np.zeros(num_perm)
-    for perm_id in range(num_perm):
-        perm_ids = np.random.permutation(n_samples)
-        #x_noise = np.random.randn(*x.shape) * np.std(x, axis=0, keepdims=True)
-        if z is not None:
-            #x_z_bootstrap = np.hstack([x + x_noise, z])
-            #x_z_bootstrap = z
-            x_z_bootstrap = np.hstack([x[perm_ids], z])
-        else:
-            x_z_bootstrap = x + x_noise
+        # Train on the reshuffled data.
         clf.restart()
+        perm_ids = np.random.permutation(n_samples)
+        x_z_bootstrap = np.hstack([x[perm_ids], z])
         clf.fit(x_z_bootstrap[n_test:], y[n_test:], **kwargs)
         y_pred = clf.predict(x_z_bootstrap[:n_test])
         d0_preds.append(y_pred)
         d0_stats[perm_id] = mse(y_pred, y[:n_test])
+        clf.close()
         if verbose:
-            print('D0 statistic, permutation {}: {}'.format(
-                perm_id, d0_stats[perm_id]))
+            print('D1 statistic, arch {}: {}'.format(
+                ARCHES[perm_id], d1_stats[perm_id]))
+            print('D0 statistic, arch {}: {}'.format(
+                ARCHES[perm_id], d0_stats[perm_id]))
 
-    #p_value = ttest_ind(d0_stats, d1_stats)
     # Bootstrap the difference in means of the two distributions.
-    t_obs = fs[test_type](d0_stats, d1_stats)
-    t_star = bootstrap(d0_stats, d1_stats, f=fs[test_type])
+    t_obs = FS[test_type](d0_stats, d1_stats)
+    t_star = bootstrap(d0_stats, d1_stats, f=FS[test_type])
     p_value = np.sum(t_star > t_obs) / float(t_star.size)
     clf.close()
     if plot_return:
         return (p_value, x, y, x_z, d1_preds, d0_preds,
                 d1_stats, d0_stats, t_obs, t_star, n_test)
     else:
-        # Get the p-value.
-        #print('Bootstrap: {}'.format(p_value))
-        # Do a one-tailed t-test.
-        tstats = ttest_ind(d1_stats, d0_stats, equal_var=False)
-        if tstats[0] > 0:
-            return 1 - tstats[1] / 2.
-        else:
-            return tstats[1] / 2.
+        return p_value
