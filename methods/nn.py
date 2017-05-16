@@ -148,7 +148,7 @@ class NN(object):
 
     def fit(self, x, y, max_epochs=1000, min_epochs=10, batch_size=32,
             lr=1e-3, max_time=np.inf, nn_verbose=False,
-            max_nonimprovs=30, **kwargs):
+            max_nonimprovs=30, dropout_keepprob=1., **kwargs):
         """ Train the MDN to maximize the data likelihood.
 
         Args:
@@ -166,6 +166,7 @@ class NN(object):
             nn_verbose (bool): Display training progress messages (or not).
             max_nonimprovs (int): Number of epochs allowed without improving
                 the validation score before quitting.
+            dropout_keepprob (float): Probability of keeping a unit on.
 
         Returns:
             tr_losses (num_epochs,): Training errors (zero-padded).
@@ -206,7 +207,7 @@ class NN(object):
                 self.sess.run(self.train_op_tf,
                               {self.x_tf: x_tr[batch_ids],
                                self.y_tf: y_tr[batch_ids],
-                               self.keep_prob: .5,
+                               self.keep_prob: dropout_keepprob,
                                self.lr_tf: lr})
             tr_loss /= batch_num
             val_loss = self.sess.run(self.loss_tf,
