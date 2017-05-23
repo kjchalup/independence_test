@@ -28,8 +28,8 @@ from independence_test.data import make_linear_data
 
 # Choose the sample numbers we will iterate over.
 SAMPLE_NUMS = np.concatenate([
-    np.floor(np.linspace(100, 1000, 25))
-    np.floor(np.linspace(1001, 100000, 75))]).astype(int)
+    np.floor(np.linspace(200, 1000, 25)),
+    np.floor(np.linspace(1001, 10000, 75))]).astype(int)
 
 # Set a limit (in seconds) on each trial. Methods that go over
 # will be forcefully terminated and will return -1 as p-value.
@@ -47,7 +47,7 @@ COND_METHODS = {'nn': cond_nn,
 # 'complexity' parameter we want to consider, and the dataset dimen-
 # sionalities we want to consider (see documentation for each data-
 # set for permissible complexity and dimensionality values).
-DSETS = {'chaos': (make_chaos_data, [.01, .04, .16, .32, .68, .84, .96, .99], [1]),
+DSETS = {'chaos': (make_chaos_data, [.01, .04, .16, .32, .5, .68, .84, .96, .99], [1]),
          'pnl': (make_pnl_data, [0], [1]),
          'discrete': (make_discrete_data, [2, 8, 32], [2, 8, 32]),
          'gmm': (make_gmm_data, [1, 4, 16], [1, 10, 100, 1000]),
@@ -113,8 +113,8 @@ if __name__ == "__main__":
                             verbose=True, nn_verbose=False, batch_size=128)
                         toc = time.time() - tic
 
-                    print('(trial {}, time {}) p_d {:.4g}, p_i {:.4g}.'.format(
-                        trial_id, toc, pval_d, pval_i))
+                    print('{}:\n time {} p_d {:.4g}, p_i {:.4g}.'.format(
+                        key, toc, pval_d, pval_i))
                     RESULTS[key].append((pval_d, pval_i, toc))
                     joblib.dump(RESULTS, SAVE_FNAME)
                 print RESULTS
