@@ -47,7 +47,8 @@ COND_METHODS = {'nn': cond_nn,
 # 'complexity' parameter we want to consider, and the dataset dimen-
 # sionalities we want to consider (see documentation for each data-
 # set for permissible complexity and dimensionality values).
-DSETS = {'chaos': (make_chaos_data, [.01, .04, .16, .32, .5, .68, .84, .96, .99], [1]),
+DSETS = {'chaos': (make_chaos_data,
+    [.01, .04, .16, .32, .5, .68, .84, .96, .99], [1]),
          'pnl': (make_pnl_data, [0], [1]),
          'discrete': (make_discrete_data, [2, 8, 32], [2, 8, 32]),
          'gmm': (make_gmm_data, [1, 4, 16], [1, 10, 100, 1000]),
@@ -81,7 +82,8 @@ def check_if_too_slow(res, method, dset, n_samples, dim, param):
 if __name__ == "__main__":
     dset = sys.argv[1]
     dataset = DSETS[dset]
-    SAVE_FNAME = os.path.join('independence_test', 'saved_data', '{}_results.pkl'.format(dset))
+    SAVE_FNAME = os.path.join(
+            'independence_test', 'saved_data', '{}_results.pkl'.format(dset))
     RESULTS = defaultdict(list)
 
     for dim in dataset[2]:
@@ -95,9 +97,9 @@ if __name__ == "__main__":
                 for method_name in COND_METHODS:
                     key = '{}_{}_{}mt_{}samples_{}dim_{}complexity'.format(
                         method_name, dset, MAX_TIME, n_samples, dim, param)
-                    print '=' * 70
-                    print key
-                    print '=' * 70
+                    print('=' * 70)
+                    print(key)
+                    print('=' * 70)
                     if check_if_too_slow(RESULTS, method_name, dset,
                             n_samples, dim, param):
                         pval_d = -3
@@ -117,4 +119,4 @@ if __name__ == "__main__":
                         key, toc, pval_d, pval_i))
                     RESULTS[key].append((pval_d, pval_i, toc))
                     joblib.dump(RESULTS, SAVE_FNAME)
-                print RESULTS
+                print(RESULTS)

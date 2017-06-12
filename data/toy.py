@@ -41,24 +41,32 @@ def make_gmm_data(n_samples, type='dep', dim=10, complexity=10, **kwargs):
 def make_chaos_data(n_samples, type='dep', complexity=.5, **kwargs):
     """ X and Y follow chaotic dynamics. """
     assert type in ['dep', 'indep']
+    if n_samples > 10**5-1:
+        raise ValueError(
+                'For Chaos data, only up to 10^5 samples can be created.')
     n_samples += 1
-    x = np.zeros((n_samples, 4))
-    y = np.zeros((n_samples, 4))
+    x = np.zeros((10**5, 4))
+    y = np.zeros((10**5, 4))
     x[-1, :] = np.random.randn(4) * .01
     y[-1, :] = np.random.randn(4) * .01
-    for step_id in range(n_samples):
+    for step_id in range(10**5):
         x[step_id, 0] = 1.4 - x[step_id-1, 0]**2 + .3 * x[step_id-1, 1]
         y[step_id, 0] = (1.4 - (complexity * x[step_id-1, 0] * y[step_id-1, 0]
                                 + (1 - complexity) * y[step_id-1, 0]**2) +
                          .1 * y[step_id-1, 1])
         x[step_id, 1] = x[step_id-1, 0]
         y[step_id, 1] = y[step_id-1, 0]
-    x[:, 2:] = np.random.randn(n_samples, 2) * .5
-    y[:, 2:] = np.random.randn(n_samples, 2) * .5
+    x[:, 2:] = np.random.randn(10**5, 2) * .5
+    y[:, 2:] = np.random.randn(10**5, 2) * .5
+
+    # Choose a random subset of required size.
+    sample_ids = np.random.choice(10**5-1, int(n_samples), replace=False)
     if type == 'dep':
-        return y[1:], x[:-1], np.array(y[:-1, :2])
+        #return y[1:], x[:-1], np.array(y[:-1, :2])
+        return y[sample_ids+1], x[sample_ids], np.array(y[sample_ids, :2])
     else:
-        return x[1:], y[:-1], np.array(x[:-1, :2])
+        #return x[1:], y[:-1], np.array(x[:-1, :2])
+        return x[sample_ids+1], y[sample_ids], np.array(x[sample_ids, :2])
 
 
 def make_pnl_data(n_samples=1000, type='dep', dim=1, complexity=0, **kwargs):
