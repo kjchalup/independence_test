@@ -112,7 +112,7 @@ class NN(object):
         self.scaler_y = StandardScaler()
 
         # Define the saver object for model persistence.
-        self.saver = tf.train.Saver(max_to_keep=1)
+        self.saver = tf.train.Saver(max_to_keep=2)
 
         # Define the Tensorflow session, and its initializer op.
         self.sess = tf.Session()

@@ -9,7 +9,9 @@ import sys
 import time
 import numpy as np
 from scipy.stats import ttest_ind
-from independence_test.methods import nn
+#from independence_test.methods import nn
+import tensorflow as tf
+from neural_networks import nn
 from independence_test.utils import equalize_dimensions
 
 # Define available test statistic functions.
@@ -96,40 +98,56 @@ def test(x, y, z=None, num_perm=10, prop_test=.1,
     x_z = np.hstack([x, z])
 
     # Set up storage.
-    d1_preds = []
-    d1_stats = np.zeros(num_perm)
     d0_preds = []
+    d1_preds = []
     d0_stats = np.zeros(num_perm)
+    d1_stats = np.zeros(num_perm)
+
+    kwargs['epochs'] = 1000
+    kwargs['lr'] = 1e-2
+    kwargs['nn_verbose'] = True
+    kwargs['batch_size'] = 128
+
+    # Construct the neural net.
+    clf = nn.NN(x_dim=x_z.shape[1], y_dim=y.shape[1],
+        arch=[128]*2, ntype='plain')
 
     for perm_id in range(num_perm):
-        # Train on the original data.
-        clf = nn.NN(x_dim=x_z.shape[1],
-                    y_dim=y.shape[1], arch=ARCHES[perm_id], **kwargs)
-        clf.fit(x_z[n_test:], y[n_test:], **kwargs)
-        y_pred = clf.predict(x_z[:n_test])
-        d1_preds.append(y_pred)
-        d1_stats[perm_id] = mse(y_pred, y[:n_test])
-
-        # Train on the reshuffled data.
-        clf.restart()
+        # Create the d0 (reshuffled-x) dataset.
         perm_ids = np.random.permutation(n_samples)
         x_z_bootstrap = np.hstack([x[perm_ids], z])
-        clf.fit(x_z_bootstrap[n_test:], y[n_test:], **kwargs)
-        y_pred = clf.predict(x_z_bootstrap[:n_test])
-        d0_preds.append(y_pred)
-        d0_stats[perm_id] = mse(y_pred, y[:n_test])
-        clf.close()
+
+        with tf.Session() as sess:
+            # Train on the reshuffled data.
+            sess.run(tf.global_variables_initializer())
+            clf.saver.save(sess, './init_nn_save')
+            clf.fit(x_z_bootstrap[n_test:], y[n_test:], sess=sess, **kwargs)
+            y_pred0 = clf.predict(x_z_bootstrap[:n_test], sess=sess)
+
+            # Train on the original data.
+            sess.run(tf.global_variables_initializer())
+            clf.saver.restore(sess, './init_nn_save')
+            clf.fit(x_z[n_test:], y[n_test:], sess=sess, **kwargs)
+            y_pred1 = clf.predict(x_z[:n_test], sess=sess)
+
+        d0_preds.append(y_pred0)
+        d0_stats[perm_id] = mse(y_pred0, y[:n_test])
+        d1_preds.append(y_pred1)
+        d1_stats[perm_id] = mse(y_pred1, y[:n_test])
+
         if verbose:
-            print('D1 statistic, arch {}: {}'.format(
-                ARCHES[perm_id], d1_stats[perm_id]))
-            print('D0 statistic, arch {}: {}'.format(
-                ARCHES[perm_id], d0_stats[perm_id]))
+            print('D0 statistic, iter {}: {}'.format(
+                perm_id, d0_stats[perm_id]))
+            print('D1 statistic, iter {}: {}'.format(
+                perm_id, d1_stats[perm_id]))
+
+    print('Resetting Tensorflow graph...')
+    tf.reset_default_graph()
 
     # Bootstrap the difference in means of the two distributions.
     t_obs = FS[test_type](d0_stats, d1_stats)
     t_star = bootstrap(d0_stats, d1_stats, f=FS[test_type])
     p_value = np.sum(t_star > t_obs) / float(t_star.size)
-    clf.close()
     if plot_return:
         return (p_value, x, y, x_z, d1_preds, d0_preds,
                 d1_stats, d0_stats, t_obs, t_star, n_test)

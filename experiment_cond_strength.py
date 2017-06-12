@@ -29,26 +29,25 @@ from independence_test.data import make_linear_data
 # Choose the sample numbers we will iterate over.
 SAMPLE_NUMS = np.concatenate([
     np.floor(np.linspace(200, 1000, 25)),
-    np.floor(np.linspace(1001, 10000, 75))]).astype(int)
+    np.floor(np.linspace(1001, 10000, 75))]).astype(int)[::10]
 
 # Set a limit (in seconds) on each trial. Methods that go over
 # will be forcefully terminated and will return -1 as p-value.
 MAX_TIME = 600
 
 # Make a dict of methods.
-COND_METHODS = {'nn': cond_nn,
-                'rcit': cond_rcit,
-                'cci': cond_cci,
-                'chsic': cond_hsic,
-                'kcit': cond_kcit,
-                'kcipt': cond_kcipt}
+COND_METHODS = {'nn': cond_nn}
+                #'rcit': cond_rcit,
+                #'cci': cond_cci,
+                #'chsic': cond_hsic,
+                #'kcit': cond_kcit,
+                #'kcipt': cond_kcipt}
 
 # Make a dict of the datasets, as well as the values of the dataset 
 # 'complexity' parameter we want to consider, and the dataset dimen-
 # sionalities we want to consider (see documentation for each data-
 # set for permissible complexity and dimensionality values).
-DSETS = {'chaos': (make_chaos_data,
-    [.01, .04, .16, .32, .5, .68, .84, .96, .99], [1]),
+DSETS = {'chaos': (make_chaos_data, [.01, .04, .16, .32, .5, .68, .84, .96, .99], [1]),
          'pnl': (make_pnl_data, [0], [1]),
          'discrete': (make_discrete_data, [2, 8, 32], [2, 8, 32]),
          'gmm': (make_gmm_data, [1, 4, 16], [1, 10, 100, 1000]),
@@ -83,7 +82,7 @@ if __name__ == "__main__":
     dset = sys.argv[1]
     dataset = DSETS[dset]
     SAVE_FNAME = os.path.join(
-            'independence_test', 'saved_data', '{}_results.pkl'.format(dset))
+            'independence_test', 'saved_data', '{}_results_newnn.pkl'.format(dset))
     RESULTS = defaultdict(list)
 
     for dim in dataset[2]:
@@ -110,9 +109,9 @@ if __name__ == "__main__":
                         # Run the trials.
                         tic = time.time()
                         pval_d = method.test(xd, yd, zd, max_time=MAX_TIME,
-                            verbose=True, nn_verbose=False, batch_size=128)
+                            verbose=True)
                         pval_i = method.test(xi, yi, zi, max_time=MAX_TIME,
-                            verbose=True, nn_verbose=False, batch_size=128)
+                            verbose=True)
                         toc = time.time() - tic
 
                     print('{}:\n time {} p_d {:.4g}, p_i {:.4g}.'.format(
