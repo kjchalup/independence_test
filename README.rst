@@ -42,10 +42,13 @@ To use the nn methods:
     * numpy >= 1.12
     * scikit-learn >= 0.18.1
     * tensorflow >= 1.0.0
+    * https://github.com/kjchalup/neural_networks.git
+
 To use Matlab wrappers (CHSIC, KCIT, KCIPT):
     * Matlab 2014a (might work with other versions, not tested)
-    * matlab engine for Python (available with Matlab)
+    * Matlab engine for Python (available with Matlab)
     * The KCIPT package for Matlab (https://github.com/garydoranjr/kcipt/)
+
 To use R wrappers (RCIT, RIT):
     * R 3.4 (might work with other versions, not tested)
     * The RCIT package for R (https://github.com/ericstrobl/RCIT)
@@ -53,4 +56,3 @@ To use R wrappers (RCIT, RIT):
 .. _pip: http://www.pip-installer.org/en/latest/
 .. _independence_nn.py: independence_nn.py
 .. _utils.py: utils.py
-.. _nn.py: nn.py

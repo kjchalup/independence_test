@@ -9,16 +9,40 @@ import sys
 import time
 import numpy as np
 from scipy.stats import ttest_ind
-#from independence_test.methods import nn
 import tensorflow as tf
 from neural_networks import nn
 from independence_test.utils import equalize_dimensions
+from scipy.stats import ttest_1samp
 
 # Define available test statistic functions.
-FS = {'min': lambda x, y: np.min(x) - np.min(y), 
+FS = {'min': lambda x, y: np.min(x) / np.min(y), 
       'mean': lambda x, y: np.mean(x) - np.mean(y)}
-ARCHES = [[64], [128], [256], [512], [1024],
-          [64, 64], [128, 128], [256, 256], [512, 512], [1024, 1024]]
+
+
+def bootstrap_mindiv(d0s, d1s):
+    f = lambda x, y: np.min(x) / np.min(y)
+    t_obs = f(d0s, d1s)
+    t_star = bootstrap(d0s, d1s, f=f)
+    p_value = np.sum(t_star > t_obs) / float(t_star.size)
+    return p_value
+
+
+def bootstrap_ttest(d0s, d1s):
+    tstat, p_value = ttest_1samp(d0s / d1s, 1)
+    if np.mean(d0s / d1s) > 1:
+        p_value /= 2.
+    else:
+        p_value = 1 - p_value / 2.
+    return p_value
+
+
+def bootstrap_mindiff(d0s, d1s):
+    f = lambda x, y: np.min(x) - np.min(y)
+    t_obs = f(d0s, d1s)
+    t_star = bootstrap(d0s, d1s, f=f)
+    p_value = np.sum(t_star > t_obs) / float(t_star.size)
+    return p_value
+
 
 def mse(y_pred, y):
     """ Compute the mean squared error.
@@ -57,7 +81,8 @@ def bootstrap(h0, h1, f, B=10000):
 
 def test(x, y, z=None, num_perm=10, prop_test=.1,
              max_time=60, discrete=(False, False),
-             plot_return=False, test_type='min', verbose=False, **kwargs):
+             plot_return=False, test_type='min',
+             verbose=False, fixed_arch=False, bootstrap_type='mindiv', **kwargs):
     """ The neural net probabilistic independence test.
     See Chalupka, Perona, Eberhardt 2017.
 
@@ -73,6 +98,8 @@ def test(x, y, z=None, num_perm=10, prop_test=.1,
         plot_return (bool): If True, return statistics useful for plotting.
         test_type (str): Test statistic type, can be 'min', 'mean'.
         verbose (bool): Print out progress messages (or not).
+        fixed_arch (bool): If True, keep the NN training procedure constant.
+            If False, draw training parameters randomly at each permutation.
         kwargs: Arguments to pass to the neural net constructor.
 
     Returns:
@@ -107,15 +134,24 @@ def test(x, y, z=None, num_perm=10, prop_test=.1,
     kwargs['lr'] = 1e-2
     kwargs['nn_verbose'] = True
     kwargs['batch_size'] = 128
+    kwargs['ntype'] = 'plain'
 
     # Construct the neural net.
-    clf = nn.NN(x_dim=x_z.shape[1], y_dim=y.shape[1],
-        arch=[128]*2, ntype='plain')
+    if fixed_arch:
+        clf = nn.NN(x_dim=x_z.shape[1], y_dim=y.shape[1],
+            arch=[128]*2, ntype='plain')
 
     for perm_id in range(num_perm):
         # Create the d0 (reshuffled-x) dataset.
         perm_ids = np.random.permutation(n_samples)
         x_z_bootstrap = np.hstack([x[perm_ids], z])
+
+        # Sample NN training params.
+        if not fixed_arch:
+            kwargs['arch'] = [32] * (perm_id + 1)
+            clf = nn.NN(x_dim=x_z.shape[1], y_dim=y.shape[1], **kwargs)
+            print(('lr={lr:.2}, bs={batch_size}, '
+                    'arch={arch}, ntype={ntype}').format(**kwargs))
 
         with tf.Session() as sess:
             # Train on the reshuffled data.
@@ -141,15 +177,13 @@ def test(x, y, z=None, num_perm=10, prop_test=.1,
             print('D1 statistic, iter {}: {}'.format(
                 perm_id, d1_stats[perm_id]))
 
-    print('Resetting Tensorflow graph...')
-    tf.reset_default_graph()
+        print('Resetting Tensorflow graph...')
+        tf.reset_default_graph()
+        
+    # Compute the p-value.
+    p_value = globals()['bootstrap_' + bootstrap_type](d0_stats, d1_stats)
 
-    # Bootstrap the difference in means of the two distributions.
-    t_obs = FS[test_type](d0_stats, d1_stats)
-    t_star = bootstrap(d0_stats, d1_stats, f=FS[test_type])
-    p_value = np.sum(t_star > t_obs) / float(t_star.size)
     if plot_return:
-        return (p_value, x, y, x_z, d1_preds, d0_preds,
-                d1_stats, d0_stats, t_obs, t_star, n_test)
+        return (p_value, d0_stats, d1_stats)
     else:
         return p_value

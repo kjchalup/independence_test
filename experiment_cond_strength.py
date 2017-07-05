@@ -25,15 +25,14 @@ from independence_test.data import make_pnl_data
 from independence_test.data import make_gmm_data
 from independence_test.data import make_discrete_data
 from independence_test.data import make_linear_data
+from independence_test.data import make_chain_data
 
 # Choose the sample numbers we will iterate over.
-SAMPLE_NUMS = np.concatenate([
-    np.floor(np.linspace(200, 1000, 25)),
-    np.floor(np.linspace(1001, 10000, 75))]).astype(int)[::10]
+SAMPLE_NUMS = np.linspace(200, 10000, 10).astype(int)
 
 # Set a limit (in seconds) on each trial. Methods that go over
 # will be forcefully terminated and will return -1 as p-value.
-MAX_TIME = 600
+MAX_TIME = 1000
 
 # Make a dict of methods.
 COND_METHODS = {'nn': cond_nn}
@@ -51,7 +50,7 @@ DSETS = {'chaos': (make_chaos_data, [.01, .04, .16, .32, .5, .68, .84, .96, .99]
          'pnl': (make_pnl_data, [0], [1]),
          'discrete': (make_discrete_data, [2, 8, 32], [2, 8, 32]),
          'gmm': (make_gmm_data, [1, 4, 16], [1, 10, 100, 1000]),
-         'linear': (make_linear_data, [.001], [1])}
+         'chain': (make_chain_data, [.01, .1, 1], [1, 10, 100])}
 
 def check_if_too_slow(res, method, dset, n_samples, dim, param):
     # If this method failed with the same param, but smaller n_samples
@@ -82,7 +81,8 @@ if __name__ == "__main__":
     dset = sys.argv[1]
     dataset = DSETS[dset]
     SAVE_FNAME = os.path.join(
-            'independence_test', 'saved_data', '{}_results_newnn.pkl'.format(dset))
+            'independence_test', 'saved_data', dset,
+                'scan.pkl')
     RESULTS = defaultdict(list)
 
     for dim in dataset[2]:
@@ -90,7 +90,6 @@ if __name__ == "__main__":
             for n_samples in SAMPLE_NUMS:
                 xd, yd, zd = dataset[0](type='dep', n_samples=n_samples,
                                         dim=dim, complexity=param)
-
                 xi, yi, zi = dataset[0](type='indep', n_samples=n_samples,
                                         dim=dim, complexity=param)
                 for method_name in COND_METHODS:
@@ -109,13 +108,12 @@ if __name__ == "__main__":
                         # Run the trials.
                         tic = time.time()
                         pval_d = method.test(xd, yd, zd, max_time=MAX_TIME,
-                            verbose=True)
+                            verbose=False, nn_verbose=False, plot_return=True, epochs=100)
                         pval_i = method.test(xi, yi, zi, max_time=MAX_TIME,
-                            verbose=True)
+                            verbose=False, nn_verbose=False, plot_return=True, epochs=100)
                         toc = time.time() - tic
-
-                    print('{}:\n time {} p_d {:.4g}, p_i {:.4g}.'.format(
-                        key, toc, pval_d, pval_i))
                     RESULTS[key].append((pval_d, pval_i, toc))
                     joblib.dump(RESULTS, SAVE_FNAME)
-                print(RESULTS)
+                    print('{}:\n time {} p_d {:.4g}, p_i {:.4g}.'.format(
+                        key, toc, pval_d[0] if method_name=='nn' else pval_d,
+                        pval_i[0] if method_name=='nn' else pval_i))

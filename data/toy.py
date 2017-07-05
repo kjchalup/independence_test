@@ -62,10 +62,8 @@ def make_chaos_data(n_samples, type='dep', complexity=.5, **kwargs):
     # Choose a random subset of required size.
     sample_ids = np.random.choice(10**5-1, int(n_samples), replace=False)
     if type == 'dep':
-        #return y[1:], x[:-1], np.array(y[:-1, :2])
         return y[sample_ids+1], x[sample_ids], np.array(y[sample_ids, :2])
     else:
-        #return x[1:], y[:-1], np.array(x[:-1, :2])
         return x[sample_ids+1], y[sample_ids], np.array(x[sample_ids, :2])
 
 
@@ -136,13 +134,13 @@ def make_linear_data(n_samples=1000, type='dep', complexity=.01, **kwargs):
     else:
         return x, y, z
 
-def make_trivial_data(n_samples=1000, dim=1, type='dep', **kwargs):
+
+def make_chain_data(n_samples=1000, dim=1, complexity=1, type='dep', **kwargs):
     """ Make x = y if type = 'dep', else make x and y uniform random. """
-    z = np.random.randn(n_samples, dim)
+    x = np.random.rand(n_samples, dim)
+    y = x + np.random.rand(n_samples, dim) * complexity
+    z = y + np.random.rand(n_samples, dim) * complexity
     if type == 'dep':
-        x = np.random.randn(n_samples, dim)
-        y = x
+        return x, y, z
     else:
-        x = np.random.randn(n_samples, dim)
-        y = np.random.randn(n_samples, dim)
-    return x, y, z
+        return x, z, y
