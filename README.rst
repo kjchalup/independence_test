@@ -13,7 +13,7 @@ described in [link to arXiv when we write it up!]. Basic usage is simple:
 
 .. code:: python 
 
-    from independence_test.methods import cond_nn
+    from independence_test.methods import cond_mixnn
     # Generate some data such that x is indpendent of y given z.
     n_samples = 300
     z = np.random.dirichlet(alpha=np.ones(2), size=n_samples)
@@ -22,7 +22,7 @@ described in [link to arXiv when we write it up!]. Basic usage is simple:
     z = z[:, :-1]
     
     # Run the conditional independence test.
-    pval = cond_nn.test(x, y, z, max_time=30, discrete=(True, False))
+    pval = cond_mixnn.test(x, y, z)
 
 Here, we created discrete variables *x* and *y*, d-separated by a "common cause"
 *z*. The null hypothesis is that *x* is independent of *y* given *z*. Since in this 
@@ -40,10 +40,10 @@ our method works great! :)  ).
 Requirements
 ------------
 To use the nn methods:
+    * https://github.com/kjchalup/neural_networks.git (my Tensorflow deep learning implementations)
     * numpy >= 1.12
     * scikit-learn >= 0.18.1
     * tensorflow >= 1.0.0
-    * https://github.com/kjchalup/neural_networks.git
 
 To use Matlab wrappers (CHSIC, KCIT, KCIPT):
     * Matlab 2014a (might work with other versions, not tested)
