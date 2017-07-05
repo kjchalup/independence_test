@@ -9,7 +9,7 @@ Usage
 Let *x, y, z* be random variables. Then deciding whether *P(x | y, z) = P(x | z)* 
 can be highly non-trivial, especially if the variables are continuous. This package 
 implements a simple yet efficient and effective conditional independence test,
-described in [link to arXiv]. Basic usage is simple:
+described in [link to arXiv when we write it up!]. Basic usage is simple:
 
 .. code:: python 
 
@@ -29,12 +29,13 @@ Here, we created discrete variables *x* and *y*, d-separated by a "common cause"
 case the variables are independent given *z*, pval shouldn't be too small. Specifying which 
 variables are discrete is optional.
 
-Implemented Methods
+Other Methods
 -------------------
-I have implemented (wrappers for) many related methods for conditional and
+I have implemented (wrappers for) many competing methods for conditional and
 unconditional independence tests. You can find references to relevant research
-in the appropriate module docstrings.
-independence_test.methods.cond_nn
+in the appropriate module docstrings. These methods are written in R and Matlab,
+so you'll need these languages installed to use them (but you shouldn't need to,
+our method works great! :)  ).
 
 Requirements
 ------------
