@@ -108,10 +108,12 @@ def equalize_dimensions(x, y, z=None):
     else:
         return x_new, y_new
 
+
 _fs = [lambda x: x, lambda x: x**2, lambda x: x**3,
         lambda x: np.tanh(x), lambda x: np.exp(-np.abs(x))]
 
-def sample_pnl(z, dim_out=1, lengthscale=1.):
+
+def sample_pnl(z):
     f = np.random.choice(_fs)
     return f(z)
 

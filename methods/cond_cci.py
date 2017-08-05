@@ -21,7 +21,8 @@ def mad(x):
     """ Return the mean absolute deviation of data in x. """
     median = np.median(x, axis=0)
     diff = np.median(np.abs(median - x), axis=0)
-    mad = 1.4826 * np.max(diff) * np.sqrt(x.shape[1]) * ((4./3.) / x.shape[0]) ** (.2)
+    mad = 1.4826 * np.max(diff) * np.sqrt(
+        x.shape[1]) * ((4./3.) / x.shape[0]) ** (.2)
     return mad
 
 
@@ -53,6 +54,8 @@ def residuals(x, z=None, max_time=np.inf):
 
 
 def fdr(plist, alpha):
+    """ Return the false discovery rate for the repeated-test
+    p-values in plist, at significance level alpha. """
     m = len(plist)
     plist = sorted(plist)
     for k in range(0, m):

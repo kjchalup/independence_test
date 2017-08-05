@@ -23,7 +23,7 @@ try:
     MATLAB_ENGINE.addpath(os.path.join(KCIPT_PATH, 'data'), nargout=1)
     MATLAB_ENGINE.addpath(os.path.join(KCIPT_PATH, 'experiments'), nargout=1)
     MATLAB_ENGINE.addpath(os.path.join(KCIPT_PATH, 'CI_PERM'), nargout=1)
-except ImportError:
+except:
     print(('Matlab engine for Python not available. You will not be able ', 
            'to use the following methods: cond_hcis, cond_kcit, cond_kcipt.'))
 

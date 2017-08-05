@@ -5,62 +5,33 @@ of the task. The larger `strength`, the larger and easier to detect
 the independence between x and y given z.
 """
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from independence_test.utils import sample_pnl, sample_gp
-
-def _sample_gmm(means, stds, coeffs, n_samples):
-    """ Sample from a mixture of Gaussians. """
-    mixs = np.random.choice(coeffs.size, n_samples, p=coeffs, replace=True)
-    return np.random.randn(n_samples) * stds[mixs] + means[mixs] 
-
-
-def make_gmm_data(n_samples, type='dep', dim=10, complexity=10, **kwargs):
-    """ Z are the means, stds and coefficients of k one-dimensional Gaussian
-    mixture components. X and Y are samples from the mixture. """
-    x = np.zeros((n_samples, dim))
-    y = np.zeros((n_samples, dim))
-    z = np.zeros((n_samples, complexity * 3))
-    coeffs = np.random.rand(n_samples, complexity)
-    coeffs /= coeffs.sum(axis=1, keepdims=True)
-    means = np.random.rand(n_samples, complexity)
-    stds = np.abs(np.random.randn(n_samples, complexity))
-    z = np.hstack([coeffs, means, stds])
-    x = np.vstack([_sample_gmm(means[i], stds[i], coeffs[i], dim) for i in range(n_samples)])
-    y = np.vstack([_sample_gmm(means[i], stds[i], coeffs[i], dim) for i in range(n_samples)])
-    if type == 'dep':
-        x, y, z = x, z, y
-        #v = np.vstack([_sample_gmm(means[i], stds[i], coeffs[i], dim) for i in range(n_samples)])
-        #mixin_ids = np.random.choice(dim, int(dim/2))
-        #x[mixin_ids] = v[:int(dim/2)]
-        #mixin_ids = np.random.choice(dim, int(dim/2))
-        #y[mixin_ids] = v[:int(dim/2)]
-
-    return x, y, z
 
 
 def make_chaos_data(n_samples, type='dep', complexity=.5, **kwargs):
     """ X and Y follow chaotic dynamics. """
     assert type in ['dep', 'indep']
-    if n_samples > 10**5-1:
+    if n_samples > 10**5+9:
         raise ValueError(
                 'For Chaos data, only up to 10^5 samples can be created.')
     n_samples += 1
-    x = np.zeros((10**5, 4))
-    y = np.zeros((10**5, 4))
+    x = np.zeros((10**5+10, 4))
+    y = np.zeros((10**5+10, 4))
     x[-1, :] = np.random.randn(4) * .01
     y[-1, :] = np.random.randn(4) * .01
-    for step_id in range(10**5):
+    for step_id in range(10**5+10):
         x[step_id, 0] = 1.4 - x[step_id-1, 0]**2 + .3 * x[step_id-1, 1]
         y[step_id, 0] = (1.4 - (complexity * x[step_id-1, 0] * y[step_id-1, 0]
                                 + (1 - complexity) * y[step_id-1, 0]**2) +
                          .1 * y[step_id-1, 1])
         x[step_id, 1] = x[step_id-1, 0]
         y[step_id, 1] = y[step_id-1, 0]
-    x[:, 2:] = np.random.randn(10**5, 2) * .5
-    y[:, 2:] = np.random.randn(10**5, 2) * .5
+    x[:, 2:] = np.random.randn(10**5+10, 2) * .5
+    y[:, 2:] = np.random.randn(10**5+10, 2) * .5
 
     # Choose a random subset of required size.
-    sample_ids = np.random.choice(10**5-1, int(n_samples), replace=False)
+    sample_ids = np.random.choice(10**5+9, int(n_samples), replace=False)
     if type == 'dep':
         return y[sample_ids+1], x[sample_ids], np.array(y[sample_ids, :2])
     else:
@@ -75,18 +46,23 @@ def make_pnl_data(n_samples=1000, type='dep', dim=1, complexity=0, **kwargs):
     Note: `complexity` must be smaller or equal to `dim`. """
 
     assert type in ['dep', 'indep']
-    assert 0 <= complexity < dim
-    complexity = dim - complexity
-    e_x = np.random.randn(n_samples, dim)
-    e_y = np.random.randn(n_samples, dim)
-    z = np.random.rand(n_samples, dim)
+    e_x = np.random.randn(n_samples, 1)
+    e_y = np.random.randn(n_samples, 1)
 
+    s1 = np.random.randn(dim, dim)
+    s1 = np.dot(s1, s1.T)
+    z = np.random.multivariate_normal(np.zeros(dim), s1, n_samples)
+    scaler = StandardScaler()
 
     # Make ANM data.
-    #x = sample_gp(sample_gp(z[:, :complexity]) + e_x)
-    x = sample_pnl(z[:, :complexity] + e_x, dim)
-    #y = sample_gp(sample_gp(z[:, :complexity]) + e_y)
-    y = sample_pnl(z[:, :complexity] + e_y, dim)
+    # Normalize z[:, 0] so it has unit variance: this is to ensure
+    # the PNL functions will be sampled over a reasonable domain.
+    z[:, :1] = scaler.fit_transform(z[:, :1])
+    x = sample_pnl(z[:, :1] + e_x)
+    y = sample_pnl(z[:, :1] + e_y)
+    
+    x = scaler.fit_transform(x)
+    y = scaler.fit_transform(y)
     
     if type == 'dep':
         #x, y, z = x, z, y
@@ -112,35 +88,36 @@ def make_discrete_data(n_samples=1000, dim=1, type='dep', complexity=20, **kwarg
         v = np.vstack([np.random.multinomial(complexity, p) for p in z])[:, :-1].astype(float)
         x += v
         y += v
+        x /= 2
+        x = np.ceil(x)
+        y /= 2
+        y = np.ceil(y)
     z = z[:, :-1]
     x = OneHotEncoder(sparse=False).fit_transform(x)
     y = OneHotEncoder(sparse=False).fit_transform(y)
     return x, y, z
 
 
-def make_linear_data(n_samples=1000, type='dep', complexity=.01, **kwargs):
-    """ Sample from a linear model where either Z
-    is a cause of X and Y ('independent case') or
-    Y is a cause of both X and Z.
-    gamma is the 
-    """
-    z = np.random.uniform(0, 1, n_samples).reshape(n_samples, 1)
-    a = np.abs(np.random.randn() * complexity + complexity)
-    b = np.abs(np.random.randn() * complexity + complexity)
-    x = a * z + np.random.randn(n_samples, 1) * .01
-    y = b * z + np.random.randn(n_samples, 1) * .01
-    if type == 'dep':
-        return x, z, y
-    else:
-        return x, y, z
-
-
 def make_chain_data(n_samples=1000, dim=1, complexity=1, type='dep', **kwargs):
     """ Make x = y if type = 'dep', else make x and y uniform random. """
-    x = np.random.rand(n_samples, dim)
-    y = x + np.random.rand(n_samples, dim) * complexity
-    z = y + np.random.rand(n_samples, dim) * complexity
+    s1 = np.random.randn(dim, dim)
+    s1 = np.dot(s1, s1.T)
+    
+    s2 = np.random.randn(dim, dim)
+    s2 = np.dot(s2, s2.T)
+
+    s3 = np.random.randn(dim, dim)
+    s3 = np.dot(s3, s3.T)
+
     if type == 'dep':
+        # x -> z -> y.
+        z = np.random.multivariate_normal(np.zeros(dim), s1, n_samples)
+        x = z + np.random.multivariate_normal(np.zeros(dim), s2, n_samples)
+        y = x + complexity * np.random.multivariate_normal(np.zeros(dim), s3, n_samples)
         return x, y, z
     else:
-        return x, z, y
+        # x <- z -> y.
+        z = np.random.multivariate_normal(np.zeros(dim), s1, n_samples)
+        x = z + np.random.multivariate_normal(np.zeros(dim), s2, n_samples) * complexity
+        y = z + np.random.multivariate_normal(np.zeros(dim), s3, n_samples) * complexity
+        return x, y, z
