@@ -25,16 +25,16 @@ from independence_test.data import make_discrete_data
 from independence_test.data import make_chain_data
 
 # Import DTIT.
-from dtit import dtit, dtit_parallel
+from dtit import dtit, dtit_cv, dtit_parallel
 
 # Choose the sample numbers we will iterate over.
-SAMPLE_NUMS = np.logspace(np.log10(100), np.log10(10000), 20).astype(int)
+SAMPLE_NUMS = np.logspace(np.log10(100), np.log10(100000), 20).astype(int)
 # Set a limit (in seconds) on each trial. Methods that go over
 # will be forcefully terminated and will return -1 as p-value.
-MAX_TIME = 60
+MAX_TIME = 120
 
 # Make a dict of methods.
-COND_METHODS = {'dtit': dtit_parallel,
+COND_METHODS = {'fit': dtit_cv,
                 'rcit': cond_rcit,
                 'cci': cond_cci,
                 'chsic': cond_hsic,
@@ -47,7 +47,7 @@ COND_METHODS = {'dtit': dtit_parallel,
 # set for permissible complexity and dimensionality values).
 DSETS = {'chaos': (make_chaos_data, [.01, .04, .16, .32, .5, .68, .84, .96, .99], [1]),
         'pnl': (make_pnl_data, [0], [1, 2, 4, 8, 16, 32, 64, 128, 256]),
-         'discrete': (make_discrete_data, [8, 32], [8, 32]),#[2, 8, 32], [2, 8, 32]),
+         'discrete': (make_discrete_data, [2, 8, 32], [2, 8, 32]),
          'chain': (make_chain_data, [1], [1, 2, 4, 8, 16, 32, 64, 128, 256])}
 
 def check_if_too_slow(res, method, dset, n_samples, dim, param):
@@ -84,8 +84,8 @@ if __name__ == "__main__":
     RESULTS = defaultdict(list)
 
     SAVE_FNAME = os.path.join(
-            'independence_test', 'saved_data', dset + '_parallel',
-                '{}.pkl'.format(method_name))
+            'independence_test', 'saved_data', dset,
+                '{}_randcv_maxsplit.pkl'.format(method_name))
 
     for dim in dataset[2]:
         for param in dataset[1]:
@@ -109,8 +109,8 @@ if __name__ == "__main__":
                     # If the method has been too slow for less
                     # time-consuming settings, assume it'd be too
                     # slow now too, and don't run it.
-                    pval_d = (-3., np.array([-3.]), np.array([-3.]))
-                    pval_i = (-3., np.array([-3.]), np.array([-3.]))
+                    pval_d = -3.
+                    pval_i = -3.
                     toc = -3.
                 else:
                     # Run the test on ceonditionally-dependent and
@@ -118,13 +118,12 @@ if __name__ == "__main__":
                     method = COND_METHODS[method_name]
                     tic = time.time()
                     pval_d = method.test(xd, yd, zd, max_time=MAX_TIME,
-                        verbose=False, plot_return=True, max_dim=100)
+                        verbose=True, logdim=True, max_dim=None)
                     pval_i = method.test(xi, yi, zi, max_time=MAX_TIME,
-                        verbose=False, plot_return=True, max_dim=100)
+                        verbose=True, logdim=True, max_dim=None)
                     toc = time.time() - tic
 
                 RESULTS[key].append((pval_d, pval_i, toc))
                 joblib.dump(RESULTS, SAVE_FNAME)
                 print('time {:.4}s, p_d {}, p_i {}.'.format(
-                    toc, pval_d[0] if method_name in ['nn', 'dtit'] else pval_d,
-                    pval_i[0] if method_name in ['nn', 'dtit'] else pval_i))
+                    toc, pval_d, pval_i))
