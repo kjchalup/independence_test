@@ -100,24 +100,23 @@ def make_discrete_data(n_samples=1000, dim=1, type='dep', complexity=20, **kwarg
 
 def make_chain_data(n_samples=1000, dim=1, complexity=1, type='dep', **kwargs):
     """ Make x = y if type = 'dep', else make x and y uniform random. """
-    s1 = np.random.randn(dim, dim)
-    s1 = np.dot(s1, s1.T)
-    
-    s2 = np.random.randn(dim, dim)
-    s2 = np.dot(s2, s2.T)
-
-    s3 = np.random.randn(dim, dim)
-    s3 = np.dot(s3, s3.T)
+    sigma = np.eye(dim)
+    A = np.random.uniform(low=-1, high=1, size=(dim, dim))
+    B = np.random.uniform(low=-1, high=1, size=(dim, dim))
 
     if type == 'dep':
         # x -> z -> y.
-        z = np.random.multivariate_normal(np.zeros(dim), s1, n_samples)
-        x = z + np.random.multivariate_normal(np.zeros(dim), s2, n_samples)
-        y = x + complexity * np.random.multivariate_normal(np.zeros(dim), s3, n_samples)
+        z = np.random.multivariate_normal(np.zeros(dim), sigma, n_samples)
+        x = np.dot(z, A) + np.random.multivariate_normal(
+            np.zeros(dim), sigma, n_samples) * complexity
+        y = np.dot(x, B) + np.random.multivariate_normal(
+            np.zeros(dim), sigma, n_samples) * complexity
         return x, y, z
     else:
         # x <- z -> y.
-        z = np.random.multivariate_normal(np.zeros(dim), s1, n_samples)
-        x = z + np.random.multivariate_normal(np.zeros(dim), s2, n_samples) * complexity
-        y = z + np.random.multivariate_normal(np.zeros(dim), s3, n_samples) * complexity
+        z = np.random.multivariate_normal(np.zeros(dim), sigma, n_samples)
+        x = np.dot(z, A) + np.random.multivariate_normal(
+            np.zeros(dim), sigma, n_samples) * complexity
+        y = np.dot(z, B) + np.random.multivariate_normal(
+            np.zeros(dim), sigma, n_samples) * complexity
         return x, y, z

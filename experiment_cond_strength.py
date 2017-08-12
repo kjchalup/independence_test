@@ -25,7 +25,8 @@ from independence_test.data import make_discrete_data
 from independence_test.data import make_chain_data
 
 # Import DTIT.
-from dtit import dtit, dtit_cv, dtit_parallel
+from dtit import dtit, dtit_parallel
+from fit import fit as dtit_cv
 
 # Choose the sample numbers we will iterate over.
 SAMPLE_NUMS = np.logspace(np.log10(100), np.log10(100000), 20).astype(int)
@@ -85,7 +86,7 @@ if __name__ == "__main__":
 
     SAVE_FNAME = os.path.join(
             'independence_test', 'saved_data', dset,
-                '{}_randcv_maxsplit.pkl'.format(method_name))
+                '{}.pkl'.format(method_name))
 
     for dim in dataset[2]:
         for param in dataset[1]:
@@ -118,9 +119,9 @@ if __name__ == "__main__":
                     method = COND_METHODS[method_name]
                     tic = time.time()
                     pval_d = method.test(xd, yd, zd, max_time=MAX_TIME,
-                        verbose=True, logdim=True, max_dim=None)
+                        verbose=True, logdim=False, max_dim=None)
                     pval_i = method.test(xi, yi, zi, max_time=MAX_TIME,
-                        verbose=True, logdim=True, max_dim=None)
+                        verbose=True, logdim=False, max_dim=None)
                     toc = time.time() - tic
 
                 RESULTS[key].append((pval_d, pval_i, toc))
