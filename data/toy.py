@@ -81,42 +81,46 @@ def make_discrete_data(n_samples=1000, dim=1, type='dep', complexity=20, **kwarg
     `complexity` indicates the number of multinomial samples in X and Y.
     """
     assert type in ['dep', 'indep']
-    z = np.random.dirichlet(alpha=np.ones(dim+1), size=n_samples)
-    x = np.vstack([np.random.multinomial(complexity, p) for p in z])[:, :-1].astype(float)
-    y = np.vstack([np.random.multinomial(complexity, p) for p in z])[:, :-1].astype(float)
-    if type == 'dep':
-        v = np.vstack([np.random.multinomial(complexity, p) for p in z])[:, :-1].astype(float)
-        x += v
-        y += v
-        x /= 2
-        x = np.ceil(x)
-        y /= 2
-        y = np.ceil(y)
-    z = z[:, :-1]
-    x = OneHotEncoder(sparse=False).fit_transform(x)
-    y = OneHotEncoder(sparse=False).fit_transform(y)
-    return x, y, z
+    z = np.random.dirichlet(alpha=np.ones(dim), size=n_samples)
+    x = np.vstack([np.random.multinomial(complexity-1, p) for p in z]).astype(float)
+    y = np.vstack([np.random.multinomial(complexity-1, p) for p in z]).astype(float)
+    x = OneHotEncoder(n_values=complexity, sparse=False).fit_transform(x)
+    y = OneHotEncoder(n_values=complexity, sparse=False).fit_transform(y)
+    if type == 'indep':
+        return x, y, z
+    else:
+        return x, z, y
 
 
 def make_chain_data(n_samples=1000, dim=1, complexity=1, type='dep', **kwargs):
     """ Make x = y if type = 'dep', else make x and y uniform random. """
-    sigma = np.eye(dim)
-    A = np.random.uniform(low=-1, high=1, size=(dim, dim))
-    B = np.random.uniform(low=-1, high=1, size=(dim, dim))
+    complexity = 1
+    #A = np.random.uniform(low=-1, high=1, size=(dim, dim))
+    #B = np.random.uniform(low=-1, high=1, size=(dim, dim))
+    A = np.random.randn(dim, dim)
+    B  = np.random.randn(dim, dim)
 
     if type == 'dep':
-        # x -> z -> y.
-        z = np.random.multivariate_normal(np.zeros(dim), sigma, n_samples)
-        x = np.dot(z, A) + np.random.multivariate_normal(
-            np.zeros(dim), sigma, n_samples) * complexity
-        y = np.dot(x, B) + np.random.multivariate_normal(
-            np.zeros(dim), sigma, n_samples) * complexity
+        # x -> z <- y.
+        z = np.random.randn(n_samples, dim)
+        x = _random_rotate(z, A) + np.random.randn(n_samples, dim)
+        y = _random_rotate(x, B) + np.random.randn(n_samples, dim)
+        #x = np.random.randn(n_samples, dim)
+        #y = np.random.randn(n_samples, dim)
+        #z = (_random_rotate(x, A) + _random_rotate(y, B) +
+        #    np.random.randn(n_samples, dim) * complexity)
         return x, y, z
     else:
         # x <- z -> y.
-        z = np.random.multivariate_normal(np.zeros(dim), sigma, n_samples)
-        x = np.dot(z, A) + np.random.multivariate_normal(
-            np.zeros(dim), sigma, n_samples) * complexity
-        y = np.dot(z, B) + np.random.multivariate_normal(
-            np.zeros(dim), sigma, n_samples) * complexity
+        z = np.random.randn(n_samples, dim)
+        x = _random_rotate(z, A) + np.random.randn(n_samples, dim) * complexity
+        y = _random_rotate(z, B) + np.random.randn(n_samples, dim) * complexity
         return x, y, z
+
+def _random_rotate(x, A):
+    """ Multiply each row vector in x by A, then renormalize to keep
+    each vector's norm constant. """
+    oldnorms = np.sum(x * x, axis=1, keepdims=True)
+    newx = np.dot(x, A)
+    newnorms = np.sum(newx * newx, axis=1, keepdims=True)
+    return newx / np.sqrt(newnorms) * np.sqrt(oldnorms)

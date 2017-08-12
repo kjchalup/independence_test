@@ -118,10 +118,16 @@ if __name__ == "__main__":
                     # independent data.
                     method = COND_METHODS[method_name]
                     tic = time.time()
+                    if dset == 'discrete':
+                        discrete = (True, False)
+                    else:
+                        discrete = (False, False)
                     pval_d = method.test(xd, yd, zd, max_time=MAX_TIME,
-                        verbose=True, logdim=False, max_dim=None)
+                        verbose=True, discrete=discrete)
+                    if dset == 'discrete':
+                        discrete = (True, True)
                     pval_i = method.test(xi, yi, zi, max_time=MAX_TIME,
-                        verbose=True, logdim=False, max_dim=None)
+                        verbose=True, discrete=discrete)
                     toc = time.time() - tic
 
                 RESULTS[key].append((pval_d, pval_i, toc))
