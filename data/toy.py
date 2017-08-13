@@ -86,10 +86,10 @@ def make_discrete_data(n_samples=1000, dim=1, type='dep', complexity=20, **kwarg
     y = np.vstack([np.random.multinomial(complexity-1, p) for p in z]).astype(float)
     x = OneHotEncoder(n_values=complexity, sparse=False).fit_transform(x)
     y = OneHotEncoder(n_values=complexity, sparse=False).fit_transform(y)
-    if type == 'indep':
-        return x, y, z
-    else:
-        return x, z, y
+    if type == 'dep':
+        copyvals = np.random.rand(n_samples) < .5
+        x[copyvals] = y[copyvals]
+    return x, y, z
 
 
 def make_chain_data(n_samples=1000, dim=1, complexity=1, type='dep', **kwargs):

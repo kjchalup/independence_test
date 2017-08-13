@@ -1,9 +1,4 @@
-""" Evaluate available methods' power and size.
-argv[1] should be the name of the dataset to use (see
-experiment_settings.py).
-
-The results are saved to SAVE_DIR/{argv[1]}_results.pkl.
-"""
+""" Compute the p-value for a given dataset (argv[1]) and method (argv[2]). """
 import os
 import sys
 import time
@@ -25,17 +20,16 @@ from independence_test.data import make_discrete_data
 from independence_test.data import make_chain_data
 
 # Import DTIT.
-from dtit import dtit, dtit_parallel
-from fit import fit as dtit_cv
+from fit import fit as fit
 
 # Choose the sample numbers we will iterate over.
 SAMPLE_NUMS = np.logspace(np.log10(100), np.log10(100000), 20).astype(int)
 # Set a limit (in seconds) on each trial. Methods that go over
 # will be forcefully terminated and will return -1 as p-value.
-MAX_TIME = 120
+MAX_TIME = 60
 
 # Make a dict of methods.
-COND_METHODS = {'fit': dtit_cv,
+COND_METHODS = {'fit': fit,
                 'rcit': cond_rcit,
                 'cci': cond_cci,
                 'chsic': cond_hsic,
@@ -128,7 +122,7 @@ if __name__ == "__main__":
                         discrete = (True, True)
                     pval_i = method.test(xi, yi, zi, max_time=MAX_TIME,
                         verbose=True, discrete=discrete)
-                    toc = time.time() - tic
+                    toc = (time.time() - tic) / 2.
 
                 RESULTS[key].append((pval_d, pval_i, toc))
                 joblib.dump(RESULTS, SAVE_FNAME)
