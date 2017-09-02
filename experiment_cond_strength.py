@@ -79,8 +79,8 @@ if __name__ == "__main__":
     RESULTS = defaultdict(list)
 
     SAVE_FNAME = os.path.join(
-            'independence_test', 'saved_data', dset,
-                '{}.pkl'.format(method_name))
+            'independence_test', 'saved_data', dset, 'tmp')
+                #'{}.pkl'.format(method_name))
 
     for dim in dataset[2]:
         for param in dataset[1]:

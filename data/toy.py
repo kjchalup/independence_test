@@ -93,12 +93,11 @@ def make_discrete_data(n_samples=1000, dim=1, type='dep', complexity=20, **kwarg
 
 
 def make_chain_data(n_samples=1000, dim=1, complexity=1, type='dep', **kwargs):
-    """ Make x = y if type = 'dep', else make x and y uniform random. """
     A = np.random.randn(dim, dim)
-    B  = np.random.randn(dim, dim)
+    B = np.random.randn(dim, dim)
 
     if type == 'dep':
-        # x -> z <- y.
+        # z -> x -> y
         z = np.random.randn(n_samples, dim)
         x = np.dot(z, A) + np.random.randn(n_samples, dim)
         y = np.dot(x, B) + np.random.randn(n_samples, dim)
